@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>EAS_Decoder</RootNamespace>
+    <AssemblyName>EASDecoder</AssemblyName>
   </PropertyGroup>
 
 </Project>
