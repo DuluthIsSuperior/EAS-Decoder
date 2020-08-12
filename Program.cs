@@ -16,7 +16,7 @@ namespace EAS_Decoder {
 			//	soxProcess.WaitForExit();
 			//}
 
-			string soxDirectory = null;
+			string soxDirectory = null; ;
 
 			foreach (DriveInfo drive in DriveInfo.GetDrives()) {
 				string programFilesDirectory = $@"{drive.Name}Program Files (x86)";
