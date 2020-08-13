@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
-//using static EAS_Decoder.MultiMon;
 
 namespace EAS_Decoder {
 	class Program {
@@ -30,6 +29,8 @@ namespace EAS_Decoder {
 			}
 
 			soxDirectory = GetSox.GetSoxProcess(soxDirectory);
+
+			Decode.DecodeEASTones();
 
 			Console.WriteLine("DONE");
 			Console.ReadKey();
