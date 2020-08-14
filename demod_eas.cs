@@ -121,23 +121,23 @@ namespace EAS_Decoder {
 						s.eas.headlen = 0;
 					}
 				} else if (s.eas.state == EAS_L2_READING_MESSAGE && s.eas.msglen <= MAX_MSG_LEN) {
-					s.eas.msg_buf[0][s.eas.msglen] = data;
+					s.eas.msg_buf[s.eas.msglen] = data;
 					s.eas.msglen++;
 				}
 			} else {
 				if (s.eas.state == EAS_L2_READING_MESSAGE) {
 					int lastHyphen = -1;
-					for (int i = 0; i < s.eas.msg_buf[0].Length; i++) {
-						if (s.eas.msg_buf[0][i] == '-') {
+					for (int i = 0; i < s.eas.msg_buf.Length; i++) {
+						if (s.eas.msg_buf[i] == '-') {
 							lastHyphen = i;
 						}
 					}
 					if (lastHyphen != -1) {
-						s.eas.msg_buf[0][lastHyphen + 1] = '\0';
+						s.eas.msg_buf[lastHyphen + 1] = '\0';
 					}
 
 					string easMessage = "";
-					foreach (char c in s.eas.msg_buf[0]) {
+					foreach (char c in s.eas.msg_buf) {
 						if (c == 0) {
 							break;
 						}
@@ -243,7 +243,7 @@ namespace EAS_Decoder {
 
 		public class State2 {
 			public char[] last_message;
-			public char[][] msg_buf;
+			public char[] msg_buf;
 			public char[] head_buf;
 			public uint headlen;
 			public uint msglen;
@@ -251,10 +251,7 @@ namespace EAS_Decoder {
 
 			public State2() {
 				last_message = new char[269];
-				msg_buf = new char[4][];
-				for (int i = 0; i < 4; i++) {
-					msg_buf[i] = new char[269];
-				}
+				msg_buf = new char[269];
 				head_buf = new char[4];
 			}
 		};
