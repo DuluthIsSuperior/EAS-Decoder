@@ -79,11 +79,5 @@ namespace EAS_Decoder {
             public State2 eas;
             public State1 eas_2;
         }
-
-  //      public DemodParam demod_eas;  // extern const struct demod_param demod_eas;
-
-  //      public Multimon(DemodParam p) {
-  //          demod_eas = p;
-		//}
     }
 }

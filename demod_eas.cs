@@ -152,7 +152,15 @@ namespace EAS_Decoder {
 
 			return s;
 		}
-
+		static float Mac(float[] a, int start, float[] b, uint size) {
+			int aIdx = start;
+			int bIdx = 0;
+			float sum = 0;
+			for (int i = 0; i < size; i++) {
+				sum += a[aIdx++] * b[bIdx++];
+			}
+			return sum;
+		}
 		public static Multimon.DemodState EASDemod(Multimon.DemodState s, Multimon.Buffer buffer, int length) {
 			float f;
 			float dll_gain;
@@ -175,10 +183,10 @@ namespace EAS_Decoder {
 					break;
 				}
 				idx += SUBSAMP;
-				f = Filter.fsqr(Filter.mac2(buffer.fbuffer, idx, eascorr_mark_i, CORRLEN)) +
-					Filter.fsqr(Filter.mac2(buffer.fbuffer, idx, eascorr_mark_q, CORRLEN)) -
-					Filter.fsqr(Filter.mac2(buffer.fbuffer, idx, eascorr_space_i, CORRLEN)) -
-					Filter.fsqr(Filter.mac2(buffer.fbuffer, idx, eascorr_space_q, CORRLEN));
+				f = (float) Math.Pow(Mac(buffer.fbuffer, idx,  eascorr_mark_i, CORRLEN), 2.0) +
+					(float) Math.Pow(Mac(buffer.fbuffer, idx,  eascorr_mark_q, CORRLEN), 2.0) -
+					(float) Math.Pow(Mac(buffer.fbuffer, idx, eascorr_space_i, CORRLEN), 2.0) -
+					(float) Math.Pow(Mac(buffer.fbuffer, idx, eascorr_space_q, CORRLEN), 2.0);
 				s.eas_2.dcd_shreg <<= 1;
 				s.eas_2.dcd_shreg |= (f > 0 ? (uint) 1 : (uint) 0);
 				if (f > 0 && s.eas_2.dcd_integrator < INTEGRATOR_MAXVAL) {

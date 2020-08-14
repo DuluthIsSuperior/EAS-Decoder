@@ -87,7 +87,7 @@ namespace EAS_Decoder {
 
 			int sample_rate = -1;
 			uint overlap = 0;
-			string inputFile = "output.raw";
+			string inputFile = "aTOR.raw";
 
 			dem_st.dem_par = demod_eas;
 			dem_st = demod_eas.init(dem_st);
