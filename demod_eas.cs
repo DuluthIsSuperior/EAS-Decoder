@@ -60,6 +60,12 @@ namespace EAS_Decoder {
 		const int MAX_HEADER_LEN = 4;
 		const string EOM = "NNNN";
 		const int MAX_MSG_LEN = 268;
+		const int EAS_L2_IDLE = 0;
+		const int EAS_L2_HEADER_SEARCH = 1;
+		const int EAS_L2_READING_MESSAGE = 2;
+		const int EAS_L2_READING_EOM = 3;
+		const int EAS_L1_IDLE = 0;
+		const int EAS_L1_SYNC = 1;
 
 		public static Multimon.DemodState EASInit(Multimon.DemodState s) {
 			// NOTE: Percision differences between C# and C
@@ -100,28 +106,28 @@ namespace EAS_Decoder {
 
 		static Multimon.DemodState EASFrame(Multimon.DemodState s, char data) {
 			if (data != 0) {
-				if (s.eas.state == Multimon.EAS_L2_IDLE) {
-					s.eas.state = Multimon.EAS_L2_HEADER_SEARCH;
+				if (s.eas.state == EAS_L2_IDLE) {
+					s.eas.state = EAS_L2_HEADER_SEARCH;
 				}
-				if (s.eas.state == Multimon.EAS_L2_HEADER_SEARCH && s.eas.headlen < MAX_HEADER_LEN) {
+				if (s.eas.state == EAS_L2_HEADER_SEARCH && s.eas.headlen < MAX_HEADER_LEN) {
 					s.eas.head_buf[s.eas.headlen] = data;
 					s.eas.headlen++;
 				}
-				if (s.eas.state == Multimon.EAS_L2_HEADER_SEARCH && s.eas.headlen >= MAX_HEADER_LEN) {
+				if (s.eas.state == EAS_L2_HEADER_SEARCH && s.eas.headlen >= MAX_HEADER_LEN) {
 					if (IsEqualUpToN(s.eas.head_buf, HEADER_BEGIN, s.eas.headlen)) {
-						s.eas.state = Multimon.EAS_L2_READING_MESSAGE;
+						s.eas.state = EAS_L2_READING_MESSAGE;
 					} else if (IsEqualUpToN(s.eas.head_buf, EOM, s.eas.headlen)) {
-						s.eas.state = Multimon.EAS_L2_READING_EOM;
+						s.eas.state = EAS_L2_READING_EOM;
 					} else {
-						s.eas.state = Multimon.EAS_L2_IDLE;
+						s.eas.state = EAS_L2_IDLE;
 						s.eas.headlen = 0;
 					}
-				} else if (s.eas.state == Multimon.EAS_L2_READING_MESSAGE && s.eas.msglen <= MAX_MSG_LEN) {
+				} else if (s.eas.state == EAS_L2_READING_MESSAGE && s.eas.msglen <= MAX_MSG_LEN) {
 					s.eas.msg_buf[s.eas.msgno][s.eas.msglen] = data;
 					s.eas.msglen++;
 				}
 			} else {
-				if (s.eas.state == Multimon.EAS_L2_READING_MESSAGE) {
+				if (s.eas.state == EAS_L2_READING_MESSAGE) {
 					int lastHyphen = -1;
 					for (int i = 0; i < s.eas.msg_buf[s.eas.msgno].Length; i++) {
 						if (s.eas.msg_buf[s.eas.msgno][i] == '-') {
@@ -141,11 +147,11 @@ namespace EAS_Decoder {
 					}
 
 					Console.WriteLine($"{s.dem_par.name}: {HEADER_BEGIN}{easMessage}");
-				} else if (s.eas.state == Multimon.EAS_L2_READING_EOM) {
+				} else if (s.eas.state == EAS_L2_READING_EOM) {
 					Console.WriteLine($"{s.dem_par.name}: {EOM}");
 				}
 
-				s.eas.state = Multimon.EAS_L2_IDLE;
+				s.eas.state = EAS_L2_IDLE;
 				s.eas.msglen = 0;
 				s.eas.headlen = 0;
 			}
@@ -216,16 +222,16 @@ namespace EAS_Decoder {
 					s.eas_2.lasts >>= 1;
 					s.eas_2.lasts |= (byte) (((s.eas_2.dcd_integrator >= 0 ? 1 : 0) << 7) & 0x80u);
 
-					if (s.eas_2.lasts == PREAMBLE && s.eas.state != Multimon.EAS_L2_READING_MESSAGE) {
-						s.eas_2.state = Multimon.EAS_L1_SYNC;
+					if (s.eas_2.lasts == PREAMBLE && s.eas.state != EAS_L2_READING_MESSAGE) {
+						s.eas_2.state = EAS_L1_SYNC;
 						s.eas_2.byte_counter = 0;
-					} else if (s.eas_2.state == Multimon.EAS_L1_SYNC) {
+					} else if (s.eas_2.state == EAS_L1_SYNC) {
 						s.eas_2.byte_counter++;
 						if (s.eas_2.byte_counter == 8) {
 							if (CharacterAllowed((char) s.eas_2.lasts)) {
 								s = EASFrame(s, (char) s.eas_2.lasts);
 							} else {
-								s.eas_2.state = Multimon.EAS_L1_IDLE;
+								s.eas_2.state = EAS_L1_IDLE;
 								s = EASFrame(s, (char) 0x00);
 							}
 							s.eas_2.byte_counter = 0;

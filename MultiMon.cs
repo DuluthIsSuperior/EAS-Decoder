@@ -27,12 +27,6 @@ using System;
 
 namespace EAS_Decoder {
 	public class Multimon {
-        public const int EAS_L2_IDLE = 0;
-        public const int EAS_L2_HEADER_SEARCH = 1;
-        public const int EAS_L2_READING_MESSAGE = 2;
-        public const int EAS_L2_READING_EOM = 3;
-        public const int EAS_L1_IDLE = 0;
-        public const int EAS_L1_SYNC = 1;
         public class State2 {
             public char[] last_message;
             public char[][] msg_buf;
