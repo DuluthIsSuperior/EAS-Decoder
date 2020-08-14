@@ -29,19 +29,18 @@
  */
 
 using System;
+using System.Reflection.Emit;
 
 namespace EAS_Decoder {
 
 	static class DemodEAS {
-		public static DemodParam demod_eas = new DemodParam {
-			name = "EAS",
-			float_samples = true,
-			samplerate = FREQ_SAMP,
-			overlap = CORRLEN,
-			init = EASInit,
-			demod = EASDemod,
-			deinit = null
-		};
+		public static string name = "EAS";
+		public static bool float_samples = true;
+		public static int samplerate = FREQ_SAMP;
+		public static int overlap = CORRLEN;
+		public static Func<DemodState, DemodState> init = EASInit;
+		public static Func<DemodState, Buffer, int, DemodState> demod = EASDemod;
+
 		const double FREQ_MARK = 2083.3;
 		const double FREQ_SPACE = 1562.5;
 		const int FREQ_SAMP = 22050;
@@ -122,32 +121,32 @@ namespace EAS_Decoder {
 						s.eas.headlen = 0;
 					}
 				} else if (s.eas.state == EAS_L2_READING_MESSAGE && s.eas.msglen <= MAX_MSG_LEN) {
-					s.eas.msg_buf[s.eas.msgno][s.eas.msglen] = data;
+					s.eas.msg_buf[0][s.eas.msglen] = data;
 					s.eas.msglen++;
 				}
 			} else {
 				if (s.eas.state == EAS_L2_READING_MESSAGE) {
 					int lastHyphen = -1;
-					for (int i = 0; i < s.eas.msg_buf[s.eas.msgno].Length; i++) {
-						if (s.eas.msg_buf[s.eas.msgno][i] == '-') {
+					for (int i = 0; i < s.eas.msg_buf[0].Length; i++) {
+						if (s.eas.msg_buf[0][i] == '-') {
 							lastHyphen = i;
 						}
 					}
 					if (lastHyphen != -1) {
-						s.eas.msg_buf[s.eas.msgno][lastHyphen + 1] = '\0';
+						s.eas.msg_buf[0][lastHyphen + 1] = '\0';
 					}
 
 					string easMessage = "";
-					foreach (char c in s.eas.msg_buf[s.eas.msgno]) {
+					foreach (char c in s.eas.msg_buf[0]) {
 						if (c == 0) {
 							break;
 						}
 						easMessage += c;
 					}
 
-					Console.WriteLine($"{s.dem_par.name}: {HEADER_BEGIN}{easMessage}");
+					Console.WriteLine($"EAS: {HEADER_BEGIN}{easMessage}");
 				} else if (s.eas.state == EAS_L2_READING_EOM) {
-					Console.WriteLine($"{s.dem_par.name}: {EOM}");
+					Console.WriteLine($"EAS: {EOM}");
 				}
 
 				s.eas.state = EAS_L2_IDLE;
@@ -248,7 +247,6 @@ namespace EAS_Decoder {
 			public char[] head_buf;
 			public uint headlen;
 			public uint msglen;
-			public uint msgno;
 			public uint state;
 
 			public State2() {
@@ -269,22 +267,11 @@ namespace EAS_Decoder {
 			public int dcd_integrator;
 			public uint state;
 		};
-		public class Buffer {    // typedef struct buffer {} buffer_t
-			public short[] sbuffer;    // short*
-			public float[] fbuffer;    // float*
+		public class Buffer {
+			public short[] sbuffer;
+			public float[] fbuffer;
 		}
-		public class DemodParam {
-			public string name;    // char*
-			public bool float_samples; // if false samples are short instead
-			public int samplerate;  // unsigned 
-			public uint overlap;
-			public Func<DemodState, DemodState> init;    //void (*init)(struct demod_state *s);
-			public Func<DemodState, Buffer, int, DemodState> demod; // void (*demod)(struct demod_state *s, buffer_t buffer, int length);
-			public Action<DemodState> deinit; // void (*deinit)(struct demod_state *s);
-		};
-
 		public struct DemodState {
-			public DemodParam dem_par;    // demod_param*
 			public State2 eas;
 			public State1 eas_2;
 		}

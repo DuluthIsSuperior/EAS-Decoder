@@ -30,7 +30,10 @@ namespace EAS_Decoder {
 
 			soxDirectory = GetSox.GetSoxProcess(soxDirectory);
 
-			Decode.DecodeEASTones();
+			Decode.DecodeEASTones("output.raw");
+			Decode.DecodeEASTones("output2.raw");
+			Decode.DecodeEASTones("anSVR.raw");
+			Decode.DecodeEASTones("aTOR.raw");
 
 			Console.WriteLine("DONE");
 			Console.ReadKey();

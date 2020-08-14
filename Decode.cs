@@ -21,7 +21,6 @@ using System.IO;
 
 namespace EAS_Decoder {
 	static class Decode {
-		static DemodEAS.DemodParam demod_eas;
 		static DemodEAS.DemodState dem_st = new DemodEAS.DemodState();
 
 		static Tuple<float[], short[]> ProcessBuffer(float[] float_buf, short[] short_buf, uint len) {
@@ -29,7 +28,7 @@ namespace EAS_Decoder {
 				fbuffer = float_buf,
 				sbuffer = short_buf
 			};
-			dem_st = demod_eas.demod(dem_st, buffer, (int) len);
+			dem_st = DemodEAS.demod(dem_st, buffer, (int) len);
 			return new Tuple<float[], short[]>(buffer.fbuffer, buffer.sbuffer);
 		}
 
@@ -82,24 +81,18 @@ namespace EAS_Decoder {
 			Console.WriteLine(bytesReadIn);
 		}
 
-		public static void DecodeEASTones() {
-			demod_eas = DemodEAS.demod_eas;
-
-			int sample_rate = -1;
+		public static void DecodeEASTones(string inputFilePath) {
 			uint overlap = 0;
-			string inputFile = "aTOR.raw";
+			//string inputFile = "output2.raw";
 
-			dem_st.dem_par = demod_eas;
-			dem_st = demod_eas.init(dem_st);
-			sample_rate = demod_eas.samplerate;
+			dem_st = DemodEAS.EASInit(dem_st);
 
-			if (demod_eas.overlap > overlap) {
-				overlap = demod_eas.overlap;
+			if (DemodEAS.overlap > overlap) {
+				overlap = (uint) DemodEAS.overlap;
 			}
 
-			Console.WriteLine($"{sample_rate} {overlap}");
 			Console.WriteLine("Beginning demodulation...");
-			InputFile(overlap, inputFile);
+			InputFile(overlap, inputFilePath);
 		}
 	}
 }
