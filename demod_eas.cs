@@ -1,5 +1,5 @@
 ﻿/*
- * This code was ported over from multimon-ng - https://github.com/EliasOenal/multimon-ng/
+ * This code was ported over from multimon-ng <filter.h multimon.h demod_eas.c> - https://github.com/EliasOenal/multimon-ng/
  * demod_eas.cs -- Emergency Alert System demodulator
  *
  *		See http://www.nws.noaa.gov/nwr/nwrsame.htm
@@ -33,7 +33,7 @@ using System;
 namespace EAS_Decoder {
 
 	static class DemodEAS {
-		public static Multimon.DemodParam demod_eas = new Multimon.DemodParam {
+		public static DemodParam demod_eas = new DemodParam {
 			name = "EAS",
 			float_samples = true,
 			samplerate = FREQ_SAMP,
@@ -67,11 +67,11 @@ namespace EAS_Decoder {
 		const int EAS_L1_IDLE = 0;
 		const int EAS_L1_SYNC = 1;
 
-		public static Multimon.DemodState EASInit(Multimon.DemodState s) {
+		public static DemodState EASInit(DemodState s) {
 			// NOTE: Percision differences between C# and C
 
-			s.eas_2 = new Multimon.State1();
-			s.eas = new Multimon.State2();
+			s.eas_2 = new State1();
+			s.eas = new State2();
 
 			float f;
 			int i;
@@ -79,7 +79,6 @@ namespace EAS_Decoder {
 				eascorr_mark_i[i] = (float) Math.Cos(f);
 				eascorr_mark_q[i] = (float) Math.Sin(f);
 				f += (float) (2.0 * Math.PI * FREQ_MARK / FREQ_SAMP);
-				//Console.WriteLine(f);
 			}
 			for (f = 0, i = 0; i < CORRLEN; i++) {
 				eascorr_space_i[i] = (float) Math.Cos(f);
@@ -104,7 +103,7 @@ namespace EAS_Decoder {
 			return string.Compare(string.Join("", s1), 0, s2, 0, (int) n) == 0;
 		}
 
-		static Multimon.DemodState EASFrame(Multimon.DemodState s, char data) {
+		static DemodState EASFrame(DemodState s, char data) {
 			if (data != 0) {
 				if (s.eas.state == EAS_L2_IDLE) {
 					s.eas.state = EAS_L2_HEADER_SEARCH;
@@ -167,7 +166,7 @@ namespace EAS_Decoder {
 			}
 			return sum;
 		}
-		public static Multimon.DemodState EASDemod(Multimon.DemodState s, Multimon.Buffer buffer, int length) {
+		public static DemodState EASDemod(DemodState s, Buffer buffer, int length) {
 			float f;
 			float dll_gain;
 
@@ -241,6 +240,53 @@ namespace EAS_Decoder {
 			}
 			s.eas_2.subsamp = (uint) length;
 			return s;
+		}
+
+		public class State2 {
+			public char[] last_message;
+			public char[][] msg_buf;
+			public char[] head_buf;
+			public uint headlen;
+			public uint msglen;
+			public uint msgno;
+			public uint state;
+
+			public State2() {
+				last_message = new char[269];
+				msg_buf = new char[4][];
+				for (int i = 0; i < 4; i++) {
+					msg_buf[i] = new char[269];
+				}
+				head_buf = new char[4];
+			}
+		};
+		public class State1 {
+			public uint dcd_shreg;
+			public uint sphase;
+			public byte lasts;    // unsigned char in C is 1 byte; byte is unsigned always
+			public uint subsamp;
+			public byte byte_counter;  // unsigned char
+			public int dcd_integrator;
+			public uint state;
+		};
+		public class Buffer {    // typedef struct buffer {} buffer_t
+			public short[] sbuffer;    // short*
+			public float[] fbuffer;    // float*
+		}
+		public class DemodParam {
+			public string name;    // char*
+			public bool float_samples; // if false samples are short instead
+			public int samplerate;  // unsigned 
+			public uint overlap;
+			public Func<DemodState, DemodState> init;    //void (*init)(struct demod_state *s);
+			public Func<DemodState, Buffer, int, DemodState> demod; // void (*demod)(struct demod_state *s, buffer_t buffer, int length);
+			public Action<DemodState> deinit; // void (*deinit)(struct demod_state *s);
+		};
+
+		public struct DemodState {
+			public DemodParam dem_par;    // demod_param*
+			public State2 eas;
+			public State1 eas_2;
 		}
 	}
 }

@@ -21,11 +21,11 @@ using System.IO;
 
 namespace EAS_Decoder {
 	static class Decode {
-		static Multimon.DemodParam demod_eas;
-		static Multimon.DemodState dem_st = new Multimon.DemodState();
+		static DemodEAS.DemodParam demod_eas;
+		static DemodEAS.DemodState dem_st = new DemodEAS.DemodState();
 
 		static Tuple<float[], short[]> ProcessBuffer(float[] float_buf, short[] short_buf, uint len) {
-			Multimon.Buffer buffer = new Multimon.Buffer {
+			DemodEAS.Buffer buffer = new DemodEAS.Buffer {
 				fbuffer = float_buf,
 				sbuffer = short_buf
 			};
