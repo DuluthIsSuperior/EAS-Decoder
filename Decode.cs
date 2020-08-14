@@ -21,20 +21,24 @@ using System.IO;
 
 namespace EAS_Decoder {
 	static class Decode {
-		static DemodEAS.DemodState dem_st = new DemodEAS.DemodState();
+		public static void DecodeEASTones(string inputFilePath) {
+			DemodEAS.DemodState dem_st = new DemodEAS.DemodState();
+			uint overlap = 0;
 
-		static Tuple<float[], short[]> ProcessBuffer(float[] float_buf, short[] short_buf, uint len) {
-			dem_st = DemodEAS.EASDemod(dem_st, float_buf, (int) len);
-			return new Tuple<float[], short[]>(float_buf, short_buf);
-		}
+			dem_st = DemodEAS.EASInit(dem_st);
 
-		public static void InputFile(uint overlap, string fname) {
+			if (DemodEAS.overlap > overlap) {
+				overlap = (uint) DemodEAS.overlap;
+			}
+
+			Console.WriteLine("Beginning demodulation...");
+
 			int i;
 			short[] buffer = new short[8192];
 			float[] fbuf = new float[16384];
 			uint fbuf_cnt = 0;
 
-			FileStream fd = File.OpenRead(fname);
+			FileStream fd = File.OpenRead(inputFilePath);
 
 			int bytesReadIn = 0;
 			while (true) {
@@ -64,9 +68,7 @@ namespace EAS_Decoder {
 						Console.WriteLine("warn: uneven number of samples read");
 					}
 					if (fbuf_cnt > overlap) {
-						Tuple<float[], short[]> p = ProcessBuffer(fbuf, buffer, fbuf_cnt - overlap);
-						fbuf = p.Item1;
-						buffer = p.Item2;
+						dem_st = DemodEAS.EASDemod(dem_st, fbuf, (int) (fbuf_cnt - overlap));	// process buffer
 						Array.Copy(fbuf, fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));
 						fbuf_cnt = overlap;
 					}
@@ -74,21 +76,6 @@ namespace EAS_Decoder {
 					Array.Clear(buffer, 0, buffer.Length);
 				}
 			}
-			Console.WriteLine(bytesReadIn);
-		}
-
-		public static void DecodeEASTones(string inputFilePath) {
-			uint overlap = 0;
-			//string inputFile = "output2.raw";
-
-			dem_st = DemodEAS.EASInit(dem_st);
-
-			if (DemodEAS.overlap > overlap) {
-				overlap = (uint) DemodEAS.overlap;
-			}
-
-			Console.WriteLine("Beginning demodulation...");
-			InputFile(overlap, inputFilePath);
 		}
 	}
 }
