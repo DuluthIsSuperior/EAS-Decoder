@@ -38,8 +38,6 @@ namespace EAS_Decoder {
 		public static bool float_samples = true;
 		public static int samplerate = FREQ_SAMP;
 		public static int overlap = CORRLEN;
-		public static Func<DemodState, DemodState> init = EASInit;
-		public static Func<DemodState, Buffer, int, DemodState> demod = EASDemod;
 
 		const double FREQ_MARK = 2083.3;
 		const double FREQ_SPACE = 1562.5;
@@ -165,7 +163,8 @@ namespace EAS_Decoder {
 			}
 			return sum;
 		}
-		public static DemodState EASDemod(DemodState s, Buffer buffer, int length) {
+		//public static DemodState EASDemod(DemodState s, Buffer buffer, int length) {
+		public static DemodState EASDemod(DemodState s, float[] fbuffer, int length) { 
 			float f;
 			float dll_gain;
 
@@ -187,10 +186,10 @@ namespace EAS_Decoder {
 					break;
 				}
 				idx += SUBSAMP;
-				f = (float) Math.Pow(Mac(buffer.fbuffer, idx,  eascorr_mark_i, CORRLEN), 2.0) +
-					(float) Math.Pow(Mac(buffer.fbuffer, idx,  eascorr_mark_q, CORRLEN), 2.0) -
-					(float) Math.Pow(Mac(buffer.fbuffer, idx, eascorr_space_i, CORRLEN), 2.0) -
-					(float) Math.Pow(Mac(buffer.fbuffer, idx, eascorr_space_q, CORRLEN), 2.0);
+				f = (float) Math.Pow(Mac(fbuffer, idx,  eascorr_mark_i, CORRLEN), 2.0) +
+					(float) Math.Pow(Mac(fbuffer, idx,  eascorr_mark_q, CORRLEN), 2.0) -
+					(float) Math.Pow(Mac(fbuffer, idx, eascorr_space_i, CORRLEN), 2.0) -
+					(float) Math.Pow(Mac(fbuffer, idx, eascorr_space_q, CORRLEN), 2.0);
 				s.eas_2.dcd_shreg <<= 1;
 				s.eas_2.dcd_shreg |= (f > 0 ? (uint) 1 : (uint) 0);
 				if (f > 0 && s.eas_2.dcd_integrator < INTEGRATOR_MAXVAL) {
@@ -264,10 +263,6 @@ namespace EAS_Decoder {
 			public int dcd_integrator;
 			public uint state;
 		};
-		public class Buffer {
-			public short[] sbuffer;
-			public float[] fbuffer;
-		}
 		public struct DemodState {
 			public State2 eas;
 			public State1 eas_2;

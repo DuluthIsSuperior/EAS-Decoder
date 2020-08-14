@@ -24,12 +24,8 @@ namespace EAS_Decoder {
 		static DemodEAS.DemodState dem_st = new DemodEAS.DemodState();
 
 		static Tuple<float[], short[]> ProcessBuffer(float[] float_buf, short[] short_buf, uint len) {
-			DemodEAS.Buffer buffer = new DemodEAS.Buffer {
-				fbuffer = float_buf,
-				sbuffer = short_buf
-			};
-			dem_st = DemodEAS.demod(dem_st, buffer, (int) len);
-			return new Tuple<float[], short[]>(buffer.fbuffer, buffer.sbuffer);
+			dem_st = DemodEAS.EASDemod(dem_st, float_buf, (int) len);
+			return new Tuple<float[], short[]>(float_buf, short_buf);
 		}
 
 		public static void InputFile(uint overlap, string fname) {
