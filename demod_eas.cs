@@ -163,7 +163,6 @@ namespace EAS_Decoder {
 			}
 			return sum;
 		}
-		//public static DemodState EASDemod(DemodState s, Buffer buffer, int length) {
 		public static DemodState EASDemod(DemodState s, float[] fbuffer, int length) {
 			float f;
 			float dll_gain;

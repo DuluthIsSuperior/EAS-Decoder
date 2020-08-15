@@ -31,25 +31,30 @@ namespace EAS_Decoder {
 				overlap = (uint) DemodEAS.overlap;
 			}
 
-			Console.WriteLine("Beginning demodulation...");
 
-			int i;
 			short[] buffer = new short[8192];
 			float[] fbuf = new float[16384];
 			uint fbuf_cnt = 0;
 
-			FileStream fd = File.OpenRead(inputFilePath);
+			FileStream fd = null;
+			try {
+				fd = File.OpenRead(inputFilePath);
+			} catch (Exception) {
+				Console.WriteLine("An error occurred opening the input file");
+				Environment.Exit(9);
+			}
 
+			Console.WriteLine("Beginning demodulation...");
 			int bytesReadIn = 0;
 			while (true) {
 				byte[] raw = new byte[buffer.Length * 2];
-				i = fd.Read(raw, 0, raw.Length);
+				int i = fd.Read(raw, 0, raw.Length);
 				bytesReadIn += i;
 
 				int idx = 0;
 
 				if (i < 0) {
-					Console.WriteLine("An error occured opening the given file");
+					Console.WriteLine("An error occurred reading from the input file");
 					return;
 				} else if (i == 0) {
 					break;

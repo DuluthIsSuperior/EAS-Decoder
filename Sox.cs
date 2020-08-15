@@ -6,8 +6,8 @@ using System.Text;
 
 namespace EAS_Decoder {
 	static class Sox {
+		static string soxDirectory = null;
 		static public string GetSoxProcess(string possibleDirectory) {
-			string soxDirectory = null;
 
 			if (possibleDirectory == null) {
 				foreach (DriveInfo drive in DriveInfo.GetDrives()) {
@@ -40,14 +40,12 @@ namespace EAS_Decoder {
 
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = soxDirectory,
-				//Arguments = @"-V2 -V2 -t wav .\output.wav -t raw -esigned-integer -b16 -r 22050 .\output.raw remix 1",
 				Arguments = "--version",
 				WindowStyle = ProcessWindowStyle.Hidden,
 				UseShellExecute = false,
 				CreateNoWindow = false,
 				WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
 				RedirectStandardOutput = true
-
 			};
 			bool isSox = false;
 			using (Process soxProcess = Process.Start(startInfo)) {
@@ -66,6 +64,40 @@ namespace EAS_Decoder {
 			}
 
 			return soxDirectory;
+		}
+	
+		static public int ConvertFileToRaw(string type, string inputFile, string outputFile) {
+			if (soxDirectory == null) {
+				Console.WriteLine("error: Internal Error");
+				Environment.Exit(7);
+			}
+			ProcessStartInfo startInfo = new ProcessStartInfo {
+				FileName = soxDirectory,
+				Arguments = $@"-V2 -V2 -t {type} {inputFile} -t raw -esigned-integer -b16 -r 22050 {outputFile} remix 1",
+				WindowStyle = ProcessWindowStyle.Hidden,
+				UseShellExecute = false,
+				CreateNoWindow = false,
+				WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+				RedirectStandardError = true
+			};
+
+			bool MADFailedToLoad = false;
+			bool fileFailedToOpen = false;
+			using (Process soxProcess = Process.Start(startInfo)) {
+				while (!soxProcess.StandardError.EndOfStream) {
+					string line = soxProcess.StandardError.ReadLine();
+					if (line.Contains("Unable to load MAD decoder library")) {
+						MADFailedToLoad = true;
+					}
+					if (line.Contains("can't open input file")) {
+						fileFailedToOpen = true;
+					}
+					Console.WriteLine(line);
+				}
+				soxProcess.WaitForExit();
+			}
+
+			return MADFailedToLoad ? -1 : fileFailedToOpen ? -2 : 0;
 		}
 	}
 }
