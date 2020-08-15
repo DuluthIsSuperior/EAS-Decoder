@@ -5,21 +5,20 @@ using System.Runtime.CompilerServices;
 namespace EAS_Decoder {
 	class Program {
 		static void DisplayHelp() {
-			Console.Write("EASDecoder [args]\n\n" +
-						"Arguemnts:\n" +
+			Console.WriteLine("\nUsage:\n    EASDecoder [args]\n\n" +
+						"Arguments:\n" +
 						"    -s [DIRECTORY]: Directory to sox.exe (not required if sox is installed in its default location on any drive)\n" +
 						"    -i or --input [FILEPATH]: Input file to analyze\n" +
 						"    -t or --type [TYPE]: The type of the input file (assumed to be .raw if not specified)\n" +
 						"    -o or --output [FILEPATH]: Output file to convert input file to raw using sox\n" +
-						"    -l or --livestream: Indicates that your input file is a livestream\n" +
-						"    -h or --help: Displays this help page\n");
+						"    -h or --help: Displays this help page\n" +
+						"\nThis program currently does not support livestreaming audio yet. All URLs will be rejected for now.");
 		}
 		static void Main(string[] args) {
 			string soxDirectory = null;
 			string inputFileDirectory = null;
 			string inputFileType = "raw";
 			string outputFileDirectory = null;
-			bool isLivestream = false;
 
 			for (int i = 0; i < args.Length; i++) {
 				if (args[i] == "-s") {
@@ -41,8 +40,6 @@ namespace EAS_Decoder {
 				} else if (args[i] == "-t" || args[i] == "--type") {
 					i++;
 					inputFileType = args[i];
-				} else if (args[i] == "-l") {
-					isLivestream = true;
 				} else if (args[i] == "-o" || args[i] == "--output" || args[i] == "--output-file") {
 					i++;
 					if (File.Exists(args[i])) {
