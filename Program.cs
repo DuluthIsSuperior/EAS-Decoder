@@ -11,13 +11,15 @@ namespace EAS_Decoder {
 						"    -i or --input [FILEPATH]: Input file to analyze\n" +
 						"    -t or --type [TYPE]: The type of the input file (assumed to be .raw if not specified)\n" +
 						"    -o or --output [FILEPATH]: Output file for sox to write to (not required if input file type is raw)\n" +
+						"    -l or --livestream: Indicates that your input file is a livestream\n" +
 						"    -h or --help: Displays this help page\n");
 		}
 		static void Main(string[] args) {
 			string soxDirectory = null;
 			string inputFileDirectory = null;
 			string inputFileType = "raw";
-			string outputFileDirectory = null; ;
+			string outputFileDirectory = null;
+			bool isLivestream = false;
 
 			for (int i = 0; i < args.Length; i++) {
 				if (args[i] == "-s") {
@@ -39,6 +41,8 @@ namespace EAS_Decoder {
 				} else if (args[i] == "-t" || args[i] == "--type") {
 					i++;
 					inputFileType = args[i];
+				} else if (args[i] == "-l") {
+					isLivestream = true;
 				} else if (args[i] == "-o" || args[i] == "--output" || args[i] == "--output-file") {
 					i++;
 					if (File.Exists(args[i])) {
@@ -69,31 +73,39 @@ namespace EAS_Decoder {
 				DisplayHelp();
 				Environment.Exit(5);
 			}
-			Sox.GetSoxProcess(soxDirectory);
 
 			if (inputFileType != "raw") {
-				if (outputFileDirectory == null) {
-					Console.WriteLine("For this file type, an output file for sox to save information to is required\nDo NOT use a streaming file");
-					DisplayHelp();
-					Environment.Exit(6);
-				}
-
-				int soxExitCode = Sox.ConvertFileToRaw(inputFileType, inputFileDirectory, outputFileDirectory);
-				if (soxExitCode < 0) {
-					if (soxExitCode == -1) {
-						Console.WriteLine("\nSox could not open your input file due to the MAD library not being able to load.\n" +
-							"You may need to add the files 'libmad-0.dll' and 'libmp3lame-0.dll' to the directory sox is installed at.");
-					} else if (soxExitCode == -2) {
-						Console.WriteLine("\nSox was unable to open your input file. Please make sure your file is a valid audio file.\n" +
-							"Please make sure that the file type given to the '-t' flag matches your input file type.");
-					}
-					Environment.Exit(8);
-				}
-
-				inputFileDirectory = outputFileDirectory;
+				Sox.GetSoxProcess(soxDirectory);
+				Console.WriteLine("Only raw files are supported for an input file");
+				Environment.Exit(6);
 			}
 
 			Decode.DecodeEASTones(inputFileDirectory);
+
+
+			//if (inputFileType != "raw") {
+			//	if (outputFileDirectory == null) {
+			//		Console.WriteLine("For this file type, an output file for sox to save information to is required");
+			//		DisplayHelp();
+			//		Environment.Exit(6);
+			//	}
+
+			//	int soxExitCode = Sox.ConvertFileToRaw(inputFileType, inputFileDirectory, outputFileDirectory);
+			//	if (soxExitCode < 0) {
+			//		if (soxExitCode == -1) {
+			//			Console.WriteLine("\nSox could not open your input file due to the MAD library not being able to load.\n" +
+			//				"You may need to add the files 'libmad-0.dll' and 'libmp3lame-0.dll' to the directory sox is installed at.");
+			//		} else if (soxExitCode == -2) {
+			//			Console.WriteLine("\nSox was unable to open your input file. Please make sure your file is a valid audio file.\n" +
+			//				"Please make sure that the file type given to the '-t' flag matches your input file type.");
+			//		}
+			//		Environment.Exit(8);
+			//	}
+
+			//	inputFileDirectory = outputFileDirectory;
+			//}
+
+			//Decode.DecodeEASTones(inputFileDirectory);
 		}
 	}
 }
