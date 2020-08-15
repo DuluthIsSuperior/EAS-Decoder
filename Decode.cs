@@ -49,8 +49,8 @@ namespace EAS_Decoder {
 				int idx = 0;
 
 				if (i < 0) {
-					Console.WriteLine("Error");
-					Environment.Exit(4);
+					Console.WriteLine("An error occured opening the given file");
+					return;
 				} else if (i == 0) {
 					break;
 				} else if (i > 0) {

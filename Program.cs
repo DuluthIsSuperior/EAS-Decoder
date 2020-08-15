@@ -28,7 +28,7 @@ namespace EAS_Decoder {
 				}
 			}
 
-			soxDirectory = GetSox.GetSoxProcess(soxDirectory);
+			soxDirectory = Sox.GetSoxProcess(soxDirectory);
 
 			Decode.DecodeEASTones("output.raw");
 			Decode.DecodeEASTones("output2.raw");

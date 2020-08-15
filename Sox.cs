@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 
 namespace EAS_Decoder {
-	static class GetSox {
+	static class Sox {
 		static public string GetSoxProcess(string possibleDirectory) {
 			string soxDirectory = null;
 
