@@ -21,20 +21,20 @@ using System.IO;
 
 namespace EAS_Decoder {
 	static class Decode {
-		static DemodEAS.DemodState global_dem_st = DemodEAS.EASInit(new DemodEAS.DemodState());
+		static DemodEAS.DemodState dem_st = DemodEAS.EASInit(new DemodEAS.DemodState());
 		static short[] global_buffer = new short[8192];
 		static float[] global_fbuf = new float[16384];
 		static uint global_fbuf_cnt = 0;
 
-		public static void DecodeEAS(byte[] raw, int i) {
+		public static bool DecodeEAS(byte[] raw, int i) {
 			uint overlap = (uint) DemodEAS.overlap;
 
 			int idx = 0;
 			if (i < 0) {
 				Console.WriteLine("An error occurred reading from the input file");
-				return;
+				return false;
 			} else if (i == 0) {
-				return;
+				return false;
 			} else {
 				Buffer.BlockCopy(raw, 0, global_buffer, 0, i);
 
@@ -50,13 +50,14 @@ namespace EAS_Decoder {
 					Console.WriteLine("warn: uneven number of samples read");
 				}
 				if (global_fbuf_cnt > overlap) {
-					global_dem_st = DemodEAS.EASDemod(global_dem_st, global_fbuf, (int) (global_fbuf_cnt - overlap));   // process buffer
+					dem_st = DemodEAS.EASDemod(dem_st, global_fbuf, (int) (global_fbuf_cnt - overlap));   // process buffer
 					Array.Copy(global_fbuf, global_fbuf_cnt - overlap, global_fbuf, 0, overlap * sizeof(float));
 					global_fbuf_cnt = overlap;
 				}
 			}
 
 			Array.Clear(global_buffer, 0, global_buffer.Length);
+			return dem_st.eas_2.state != DemodEAS.EAS_L2_IDLE;
 		}
 		public static void DecodeFromFile(string inputFilePath) {
 			FileStream fd = null;

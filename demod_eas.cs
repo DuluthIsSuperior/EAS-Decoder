@@ -57,10 +57,10 @@ namespace EAS_Decoder {
 		const int MAX_HEADER_LEN = 4;
 		const string EOM = "NNNN";
 		const int MAX_MSG_LEN = 268;
-		const int EAS_L2_IDLE = 0;
-		const int EAS_L2_HEADER_SEARCH = 1;
-		const int EAS_L2_READING_MESSAGE = 2;
-		const int EAS_L2_READING_EOM = 3;
+		public const int EAS_L2_IDLE = 0;
+		public const int EAS_L2_HEADER_SEARCH = 1;
+		public const int EAS_L2_READING_MESSAGE = 2;
+		public const int EAS_L2_READING_EOM = 3;
 		const int EAS_L1_IDLE = 0;
 		const int EAS_L1_SYNC = 1;
 

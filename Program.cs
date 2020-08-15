@@ -11,14 +11,33 @@ namespace EAS_Decoder {
 						"    -i or --input [FILEPATH]: Input file to analyze\n" +
 						"    -t or --type [TYPE]: The type of the input file (assumed to be .raw if not specified)\n" +
 						"    -o or --output [FILEPATH]: Output file to convert input file to raw using sox\n" +
+						"    -r or --record: Saves a snippet of any alerts that this program reads in using parameters from the input file\n" +
+						"                    Does not work if the input file is already raw\n" +
 						"    -h or --help: Displays this help page\n" +
 						"\nThis program currently does not support livestreaming audio yet. All URLs will be rejected for now.");
 		}
+
+		static void DidSoxFail(int soxExitCode) {
+			if (soxExitCode < 0) {
+				if (soxExitCode == -1) {
+					Console.WriteLine("\nSox could not open your input file due to the MAD library not being able to load.\n" +
+						"You may need to add the files 'libmad-0.dll' and 'libmp3lame-0.dll' to the directory sox is installed at.");
+				} else if (soxExitCode == -2) {
+					Console.WriteLine("\nSox was unable to open your input file. Please make sure your file is a valid audio file.\n" +
+						"Please make sure that the file type given to the '-t' flag matches your input file type.");
+				} else if (soxExitCode == -3) {
+					Console.WriteLine("\nWe could not read the sample rate of your input file from Sox. Please make sure your audio file is valid.");
+				}
+				Environment.Exit(8);
+			}
+		}
+
 		static void Main(string[] args) {
 			string soxDirectory = null;
 			string inputFileDirectory = null;
 			string inputFileType = "raw";
 			string outputFileDirectory = null;
+			bool recordOnEAS = false;
 
 			for (int i = 0; i < args.Length; i++) {
 				if (args[i] == "-s") {
@@ -40,6 +59,9 @@ namespace EAS_Decoder {
 				} else if (args[i] == "-t" || args[i] == "--type") {
 					i++;
 					inputFileType = args[i];
+				} else if (args[i] == "-r" || args[i] == "--record") {
+					Console.WriteLine("-r is currently not supported. Unspecified behavior may occur.");
+					recordOnEAS = true;
 				} else if (args[i] == "-o" || args[i] == "--output" || args[i] == "--output-file") {
 					i++;
 					if (File.Exists(args[i])) {
@@ -73,17 +95,15 @@ namespace EAS_Decoder {
 
 			if (inputFileType != "raw") {
 				Sox.GetSoxProcess(soxDirectory);
-				int soxExitCode = Sox.ConvertAndDecode(inputFileType, inputFileDirectory, outputFileDirectory);
-				if (soxExitCode < 0) {
-					if (soxExitCode == -1) {
-						Console.WriteLine("\nSox could not open your input file due to the MAD library not being able to load.\n" +
-							"You may need to add the files 'libmad-0.dll' and 'libmp3lame-0.dll' to the directory sox is installed at.");
-					} else if (soxExitCode == -2) {
-						Console.WriteLine("\nSox was unable to open your input file. Please make sure your file is a valid audio file.\n" +
-							"Please make sure that the file type given to the '-t' flag matches your input file type.");
-					}
-					Environment.Exit(8);
+
+				int soxExitCode;
+				if (recordOnEAS) {
+					soxExitCode = Sox.GetFileInformation(inputFileDirectory);
+					DidSoxFail(soxExitCode);
 				}
+
+				soxExitCode = Sox.ConvertAndDecode(inputFileType, inputFileDirectory, outputFileDirectory);
+				DidSoxFail(soxExitCode);
 			} else {
 				Decode.DecodeFromFile(inputFileDirectory);
 			}
