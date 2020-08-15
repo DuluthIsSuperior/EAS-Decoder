@@ -262,7 +262,7 @@ namespace EAS_Decoder {
 			public int dcd_integrator;
 			public uint state;
 		};
-		public struct DemodState {
+		public class DemodState {
 			public State2 eas;
 			public State1 eas_2;
 		}

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace EAS_Decoder {
@@ -66,34 +67,55 @@ namespace EAS_Decoder {
 			return soxDirectory;
 		}
 	
-		static public int ConvertFileToRaw(string type, string inputFile, string outputFile) {
+		public static int ConvertAndDecode(string type, string inputFile, string outputFile) {
 			if (soxDirectory == null) {
 				Console.WriteLine("error: Internal Error");
 				Environment.Exit(7);
 			}
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = soxDirectory,
-				Arguments = $@"-V2 -V2 -t {type} {inputFile} -t raw -esigned-integer -b16 -r 22050 {outputFile} remix 1",
+				Arguments = $@"-V2 -V2 -t {type} {inputFile} -t raw -esigned-integer -b16 -r 22050 - remix 1",
 				WindowStyle = ProcessWindowStyle.Hidden,
 				UseShellExecute = false,
 				CreateNoWindow = false,
 				WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+				RedirectStandardOutput = true,
 				RedirectStandardError = true
 			};
 
 			bool MADFailedToLoad = false;
 			bool fileFailedToOpen = false;
+			FileStream fs = null;
+			if (outputFile != null) {
+				File.WriteAllText(outputFile, string.Empty);
+				fs = new FileStream(outputFile, FileMode.OpenOrCreate);
+			}
+			
 			using (Process soxProcess = Process.Start(startInfo)) {
-				while (!soxProcess.StandardError.EndOfStream) {
-					string line = soxProcess.StandardError.ReadLine();
+				FileStream baseStream = (FileStream) soxProcess.StandardOutput.BaseStream;
+				int lastRead = 0;
+				do {	// sox will not produce anything on stdout if an error occurs
+					byte[] buffer = new byte[16384];
+					lastRead = baseStream.Read(buffer, 0, buffer.Length);
+					if (lastRead > 0) {
+						Decode.DecodeEAS(buffer, lastRead);
+						if (fs != null) {
+							fs.Write(buffer, 0, lastRead);
+						}
+					}
+				} while (lastRead > 0);
+
+				string line = soxProcess.StandardError.ReadLine();
+				while (line != null) {
 					if (line.Contains("Unable to load MAD decoder library")) {
 						MADFailedToLoad = true;
 					}
 					if (line.Contains("can't open input file")) {
 						fileFailedToOpen = true;
 					}
-					Console.WriteLine(line);
+					line = soxProcess.StandardError.ReadLine();
 				}
+
 				soxProcess.WaitForExit();
 			}
 

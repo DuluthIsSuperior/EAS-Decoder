@@ -21,21 +21,44 @@ using System.IO;
 
 namespace EAS_Decoder {
 	static class Decode {
-		public static void DecodeEASTones(string inputFilePath) {
-			DemodEAS.DemodState dem_st = new DemodEAS.DemodState();
-			uint overlap = 0;
+		static DemodEAS.DemodState global_dem_st = DemodEAS.EASInit(new DemodEAS.DemodState());
+		static short[] global_buffer = new short[8192];
+		static float[] global_fbuf = new float[16384];
+		static uint global_fbuf_cnt = 0;
 
-			dem_st = DemodEAS.EASInit(dem_st);
+		public static void DecodeEAS(byte[] raw, int i) {
+			uint overlap = (uint) DemodEAS.overlap;
 
-			if (DemodEAS.overlap > overlap) {
-				overlap = (uint) DemodEAS.overlap;
+			int idx = 0;
+			if (i < 0) {
+				Console.WriteLine("An error occurred reading from the input file");
+				return;
+			} else if (i == 0) {
+				return;
+			} else {
+				Buffer.BlockCopy(raw, 0, global_buffer, 0, i);
+
+				while (true) {
+					i -= sizeof(short);
+					if (i < sizeof(short)) {
+						break;
+					}
+					idx++;
+					global_fbuf[global_fbuf_cnt++] = global_buffer[idx] * (1.0F / 32768.0F);
+				}
+				if (i != 0) {
+					Console.WriteLine("warn: uneven number of samples read");
+				}
+				if (global_fbuf_cnt > overlap) {
+					global_dem_st = DemodEAS.EASDemod(global_dem_st, global_fbuf, (int) (global_fbuf_cnt - overlap));   // process buffer
+					Array.Copy(global_fbuf, global_fbuf_cnt - overlap, global_fbuf, 0, overlap * sizeof(float));
+					global_fbuf_cnt = overlap;
+				}
 			}
 
-
-			short[] buffer = new short[8192];
-			float[] fbuf = new float[16384];
-			uint fbuf_cnt = 0;
-
+			Array.Clear(global_buffer, 0, global_buffer.Length);
+		}
+		public static void DecodeFromFile(string inputFilePath) {
 			FileStream fd = null;
 			try {
 				fd = File.OpenRead(inputFilePath);
@@ -44,41 +67,17 @@ namespace EAS_Decoder {
 				Environment.Exit(9);
 			}
 
-			Console.WriteLine("Beginning demodulation...");
-			int bytesReadIn = 0;
 			while (true) {
-				byte[] raw = new byte[buffer.Length * 2];
+				byte[] raw = new byte[global_buffer.Length * 2];
 				int i = fd.Read(raw, 0, raw.Length);
-				bytesReadIn += i;
-
-				int idx = 0;
 
 				if (i < 0) {
 					Console.WriteLine("An error occurred reading from the input file");
 					return;
 				} else if (i == 0) {
-					break;
+					return;
 				} else if (i > 0) {
-					Buffer.BlockCopy(raw, 0, buffer, 0, raw.Length);
-
-					while (true) {
-						i -= sizeof(short);
-						if (i < sizeof(short)) {
-							break;
-						}
-						idx++;
-						fbuf[fbuf_cnt++] = buffer[idx] * (1.0F / 32768.0F);
-					}
-					if (i != 0) {
-						Console.WriteLine("warn: uneven number of samples read");
-					}
-					if (fbuf_cnt > overlap) {
-						dem_st = DemodEAS.EASDemod(dem_st, fbuf, (int) (fbuf_cnt - overlap));	// process buffer
-						Array.Copy(fbuf, fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));
-						fbuf_cnt = overlap;
-					}
-
-					Array.Clear(buffer, 0, buffer.Length);
+					DecodeEAS(raw, i);
 				}
 			}
 		}
