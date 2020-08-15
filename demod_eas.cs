@@ -30,6 +30,7 @@
 
 using System;
 using System.Reflection.Emit;
+using System.Xml;
 
 namespace EAS_Decoder {
 
@@ -105,20 +106,23 @@ namespace EAS_Decoder {
 				if (s.eas.state == EAS_L2_IDLE) {
 					s.eas.state = EAS_L2_HEADER_SEARCH;
 				}
-				if (s.eas.state == EAS_L2_HEADER_SEARCH && s.eas.headlen < MAX_HEADER_LEN) {
-					s.eas.head_buf[s.eas.headlen] = data;
-					s.eas.headlen++;
-				}
-				if (s.eas.state == EAS_L2_HEADER_SEARCH && s.eas.headlen >= MAX_HEADER_LEN) {
-					if (IsEqualUpToN(s.eas.head_buf, HEADER_BEGIN, s.eas.headlen)) {
-						s.eas.state = EAS_L2_READING_MESSAGE;
-					} else if (IsEqualUpToN(s.eas.head_buf, EOM, s.eas.headlen)) {
-						s.eas.state = EAS_L2_READING_EOM;
-					} else {
-						s.eas.state = EAS_L2_IDLE;
-						s.eas.headlen = 0;
+				if (s.eas.state == EAS_L2_HEADER_SEARCH) {
+					if (s.eas.headlen < MAX_HEADER_LEN) {
+						s.eas.head_buf[s.eas.headlen] = data;
+						s.eas.headlen++;
 					}
-				} else if (s.eas.state == EAS_L2_READING_MESSAGE && s.eas.msglen <= MAX_MSG_LEN) {
+					if (s.eas.headlen >= MAX_HEADER_LEN) {
+						if (IsEqualUpToN(s.eas.head_buf, HEADER_BEGIN, s.eas.headlen)) {
+							s.eas.state = EAS_L2_READING_MESSAGE;
+						} else if (IsEqualUpToN(s.eas.head_buf, EOM, s.eas.headlen)) {
+							s.eas.state = EAS_L2_READING_EOM;
+						} else {
+							s.eas.state = EAS_L2_IDLE;
+							s.eas.headlen = 0;
+						}
+					}
+				}
+				if (s.eas.state == EAS_L2_READING_MESSAGE && s.eas.msglen <= MAX_MSG_LEN) {
 					s.eas.msg_buf[s.eas.msglen] = data;
 					s.eas.msglen++;
 				}
@@ -163,7 +167,6 @@ namespace EAS_Decoder {
 			}
 			return sum;
 		}
-		//public static DemodState EASDemod(DemodState s, Buffer buffer, int length) {
 		public static DemodState EASDemod(DemodState s, float[] fbuffer, int length) { 
 			float f;
 			float dll_gain;
@@ -239,7 +242,6 @@ namespace EAS_Decoder {
 			s.eas_2.subsamp = (uint) length;
 			return s;
 		}
-
 		public class State2 {
 			public char[] last_message;
 			public char[] msg_buf;
