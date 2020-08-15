@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "EAS Decoder": {
+      "commandName": "Project",
+      "commandLineArgs": "-i output.raw"
+    }
+  }
+}
