@@ -112,18 +112,51 @@ namespace EAS_Decoder {
 			return soxDirectory;
 		}
 
-		static void ConvertRAWToFile() {
-			ProcessStartInfo startInfo = GetSoxStartInfo($"", true, true);
+		static void ConvertRAWToMP3(string filename) {
+			ProcessStartInfo startInfo = GetSoxStartInfo($"-r 22050 -e signed -b 16 -t raw \"{filename}.raw\" -t mp3 \"{filename}.mp3\"", false, true);
+			using (Process soxProcess = Process.Start(startInfo)) {
+				string line = soxProcess.StandardError.ReadLine();
+				while (line != null) {
+					Console.WriteLine(line);
+				}
+				soxProcess.WaitForExit();
+			}
+		}
+
+		static string AddLeadingZero(int value) {
+			return $"{(value < 10 ? "0" : "")}{value}";
+		}
+
+		//static void SaveEASRecording(ref FileStream easRecord, byte[] buffer, int lastRead, string fileName) {
+		//	easRecord.Write(buffer, 0, lastRead);
+		//	easRecord.Close();
+		//	easRecord = null;
+
+		//	ConvertRAWToMP3(fileName);
+		//	File.Delete($"{fileName}.raw");
+		//}
+
+		static void SaveEASRecording(ref FileStream easRecord, FixedSizeQueue<byte> bufferBefore, string fileName) {
+			while (!bufferBefore.IsEmpty) {
+				byte[] b = new byte[1];
+				if (bufferBefore.TryDequeue(out b[0])) {
+					easRecord.Write(b);
+				}
+			}
+
+			easRecord.Close();
+			easRecord = null;
+
+			ConvertRAWToMP3(fileName);
+			File.Delete($"{fileName}.raw");
 		}
 
 		public static uint samplerate;
 		static DateTime fileCreated = DateTime.Now;
-		static FixedSizeQueue<byte> buffer5Seconds = null;
+		static FixedSizeQueue<byte> bufferBefore = null;
 		static FileStream easRecord = null;
-		static string[] months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+		static readonly string[] months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 		public static int ConvertAndDecode(string type, string inputFile, string outputFile) {
-			bool isRecording = false;
-
 			if (soxDirectory == null) {
 				Console.WriteLine("error: Internal Error");
 				Environment.Exit(7);
@@ -140,7 +173,8 @@ namespace EAS_Decoder {
 				FileStream baseStream = (FileStream) soxProcess.StandardOutput.BaseStream;
 				int lastRead = 0;
 				bool record = false;
-
+				string fileName = null;
+				bool needToBuffer = true;
 
 				do {	// sox will not produce anything on stdout if an error occurs
 					byte[] buffer = new byte[8192];
@@ -154,41 +188,43 @@ namespace EAS_Decoder {
 						}
 					}
 
-					if (buffer5Seconds != null) {
-						if (!isRecording) {
+					if (bufferBefore != null) {
+						if (needToBuffer) {
 							for (int i = 0; i < lastRead; i++) {
-								buffer5Seconds.Enqueue(buffer[i]);
+								bufferBefore.Enqueue(buffer[i]);
+							}
+							if (easRecord != null && bufferBefore.Size == bufferBefore.Count) {
+								SaveEASRecording(ref easRecord, bufferBefore, fileName);
 							}
 						}
-						if (record && !isRecording) {
-							isRecording = true;
-							Console.WriteLine($"RECORDING {info.Item2}");
+						if (record && easRecord == null) {
 							DateTime recordingStarted = fileCreated.AddSeconds(info.Item2 / samplerate);
-							string month = $"{(recordingStarted.Month < 10 ? "0" : "")}{recordingStarted.Month}{months[recordingStarted.Month - 1]}";
-							string time = $"{recordingStarted.Hour}{recordingStarted.Minute}{recordingStarted.Second}";
-							string fileName = $"{recordingStarted.Year}_{month}_{recordingStarted.Day} - {time}.raw";
-							//string fileName = "1.raw";
-							easRecord = new FileStream(fileName, FileMode.OpenOrCreate);
-							while (!buffer5Seconds.IsEmpty) {
+							string month = $"{AddLeadingZero(recordingStarted.Month)}{months[recordingStarted.Month - 1]}";
+							string time = $"{AddLeadingZero(recordingStarted.Hour)}{AddLeadingZero(recordingStarted.Minute)}{AddLeadingZero(recordingStarted.Second)}";
+							fileName = $"{recordingStarted.Year}_{month}_{recordingStarted.Day} - {time}";
+							easRecord = new FileStream($"{fileName}.raw", FileMode.OpenOrCreate);
+							while (!bufferBefore.IsEmpty) {
 								byte[] b = new byte[1];
-								if (buffer5Seconds.TryDequeue(out b[0])) {
+								if (bufferBefore.TryDequeue(out b[0])) {
 									easRecord.Write(b);
 								}
+								needToBuffer = false;
 							}
-						} else if (record && isRecording) {
-							easRecord.Write(buffer);
-						} else if (!record && isRecording) {
-							isRecording = false;
-							Console.WriteLine($"STOPPED {info.Item3}");
-							easRecord.Write(buffer);
-
-
+						} else if (record && easRecord != null) {
+							easRecord.Write(buffer, 0, lastRead);
+							needToBuffer = false;
+						} else if (!record && easRecord != null && !needToBuffer) {
+							easRecord.Write(buffer, 0, lastRead);
+							needToBuffer = true;
+							bufferBefore = new FixedSizeQueue<byte>(samplerate * 5);
 						}
 					}
 				} while (lastRead > 0);
 
 				didNotLoad = FailedToLoad(soxProcess.StandardError);
-
+				//if (easRecord != null) {
+				//	SaveEASRecording(ref easRecord, bufferBefore, fileName);
+				//}
 				soxProcess.WaitForExit();
 			}
 			return didNotLoad;
@@ -196,9 +232,6 @@ namespace EAS_Decoder {
 
 		public static int GetFileInformation(string filepath) {
 			fileCreated = DateTime.Now;
-			//inputAudio = new AudioInfo {
-			//	type = filepath.Split('.')[^1]
-			//};
 
 			ProcessStartInfo startInfo = GetSoxStartInfo($"--i {filepath}", true, true);
 
@@ -224,7 +257,7 @@ namespace EAS_Decoder {
 				return -3;
 			}
 
-			buffer5Seconds = new FixedSizeQueue<byte>(samplerate * 5);
+			bufferBefore = new FixedSizeQueue<byte>(samplerate * 5);
 			return 0;
 		}
 	}

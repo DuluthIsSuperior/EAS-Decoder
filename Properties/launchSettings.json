@@ -2,7 +2,7 @@
   "profiles": {
     "EAS Decoder": {
       "commandName": "Project",
-      "commandLineArgs": "-i testTOR.mp3 -t mp3 -r"
+      "commandLineArgs": "-i long.wav -t wav -r"
     }
   }
 }

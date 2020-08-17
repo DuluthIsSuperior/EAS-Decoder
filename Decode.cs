@@ -21,7 +21,7 @@ using System.IO;
 
 namespace EAS_Decoder {
 	static class Decode {
-		static DemodEAS.DemodState dem_st = DemodEAS.EASInit(new DemodEAS.DemodState());
+		public static DemodEAS.DemodState dem_st = DemodEAS.EASInit(new DemodEAS.DemodState());
 		static short[] buffer = new short[8192];
 		static float[] fbuf = new float[16384];
 		static uint global_fbuf_cnt = 0;
@@ -31,7 +31,7 @@ namespace EAS_Decoder {
 		public static uint eomLastDetected = 0;
 		public static int eomTonesReadIn = 0;
 
-		static int bytesReadIn = 0;
+		public static int bytesReadIn = 0;
 		static bool record = false;
 		public static Tuple<bool, uint, uint> DecodeEAS(byte[] raw, int i) {
 			uint overlap = (uint) DemodEAS.overlap;
