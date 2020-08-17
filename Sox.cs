@@ -12,17 +12,19 @@ namespace EAS_Decoder {
 	public class FixedSizeQueue<T> : ConcurrentQueue<T> {
 		private readonly object syncObject = new object();
 
-		public int Size { get; private set; }
+		public uint Size { get; private set; }
 
-		public FixedSizeQueue(int size) {
+		public FixedSizeQueue(uint size) {
 			Size = size;
 		}
 
 		public new void Enqueue(T obj) {
 			base.Enqueue(obj);
-			while (base.Count > Size) {
-				T outObj;
-				base.TryDequeue(out outObj);
+			lock (syncObject) {
+				while (base.Count > Size) {
+					T outObj;
+					base.TryDequeue(out outObj);
+				}
 			}
 		}
 	}
@@ -110,11 +112,18 @@ namespace EAS_Decoder {
 			return soxDirectory;
 		}
 
-		static int samplerate = -1;
+		static void ConvertRAWToFile() {
+			ProcessStartInfo startInfo = GetSoxStartInfo($"", true, true);
+		}
+
+		public static uint samplerate;
+		static DateTime fileCreated = DateTime.Now;
 		static FixedSizeQueue<byte> buffer5Seconds = null;
-		static bool isRecording = false;
-		static MemoryStream ms = null;
+		static FileStream easRecord = null;
+		static string[] months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 		public static int ConvertAndDecode(string type, string inputFile, string outputFile) {
+			bool isRecording = false;
+
 			if (soxDirectory == null) {
 				Console.WriteLine("error: Internal Error");
 				Environment.Exit(7);
@@ -130,12 +139,16 @@ namespace EAS_Decoder {
 			using (Process soxProcess = Process.Start(startInfo)) {
 				FileStream baseStream = (FileStream) soxProcess.StandardOutput.BaseStream;
 				int lastRead = 0;
+				bool record = false;
+
+
 				do {	// sox will not produce anything on stdout if an error occurs
-					byte[] buffer = new byte[16384];
+					byte[] buffer = new byte[8192];
 					lastRead = baseStream.Read(buffer, 0, buffer.Length);
-					bool record = false;
+					Tuple<bool, uint, uint> info = null;
 					if (lastRead > 0) {
-						record = Decode.DecodeEAS(buffer, lastRead);
+						info = Decode.DecodeEAS(buffer, lastRead);
+						record = info.Item1;
 						if (fs != null) {
 							fs.Write(buffer, 0, lastRead);
 						}
@@ -148,21 +161,28 @@ namespace EAS_Decoder {
 							}
 						}
 						if (record && !isRecording) {
-							ms = new MemoryStream();
+							isRecording = true;
+							Console.WriteLine($"RECORDING {info.Item2}");
+							DateTime recordingStarted = fileCreated.AddSeconds(info.Item2 / samplerate);
+							string month = $"{(recordingStarted.Month < 10 ? "0" : "")}{recordingStarted.Month}{months[recordingStarted.Month - 1]}";
+							string time = $"{recordingStarted.Hour}{recordingStarted.Minute}{recordingStarted.Second}";
+							string fileName = $"{recordingStarted.Year}_{month}_{recordingStarted.Day} - {time}.raw";
+							//string fileName = "1.raw";
+							easRecord = new FileStream(fileName, FileMode.OpenOrCreate);
 							while (!buffer5Seconds.IsEmpty) {
-								byte b;
-								if (buffer5Seconds.TryDequeue(out b)) {
-									ms.WriteByte(b);
+								byte[] b = new byte[1];
+								if (buffer5Seconds.TryDequeue(out b[0])) {
+									easRecord.Write(b);
 								}
 							}
-							isRecording = true;
-						} else if (isRecording) {
-							ms.Write(buffer);
-							if (!record) {
-								ms.Flush();
-								ms.Close();
-								isRecording = false;
-							}
+						} else if (record && isRecording) {
+							easRecord.Write(buffer);
+						} else if (!record && isRecording) {
+							isRecording = false;
+							Console.WriteLine($"STOPPED {info.Item3}");
+							easRecord.Write(buffer);
+
+
 						}
 					}
 				} while (lastRead > 0);
@@ -175,6 +195,11 @@ namespace EAS_Decoder {
 		}
 
 		public static int GetFileInformation(string filepath) {
+			fileCreated = DateTime.Now;
+			//inputAudio = new AudioInfo {
+			//	type = filepath.Split('.')[^1]
+			//};
+
 			ProcessStartInfo startInfo = GetSoxStartInfo($"--i {filepath}", true, true);
 
 			int didNotLoad;
@@ -182,7 +207,7 @@ namespace EAS_Decoder {
 				while (!soxProcess.StandardOutput.EndOfStream) {
 					string[] line = soxProcess.StandardOutput.ReadLine().Split(' ');
 					if (line[0] == "Sample" && line[1] == "Rate") {
-						int.TryParse(line[^1], out samplerate);
+						uint.TryParse(line[^1], out samplerate);
 					}
 				}
 
@@ -194,7 +219,7 @@ namespace EAS_Decoder {
 				return didNotLoad;
 			}
 
-			if (samplerate == -1) {
+			if (samplerate == 0) {
 				Console.WriteLine("Could not read sample rate of your input file from Sox");
 				return -3;
 			}

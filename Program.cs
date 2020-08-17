@@ -60,8 +60,11 @@ namespace EAS_Decoder {
 					i++;
 					inputFileType = args[i];
 				} else if (args[i] == "-r" || args[i] == "--record") {
-					Console.WriteLine("-r is currently not supported. Unspecified behavior may occur.");
-					recordOnEAS = true;
+					if (inputFileType == "raw") {
+						Console.WriteLine("Recording on alert is not supported when the input file is raw");
+					} else {
+						recordOnEAS = true;
+					}
 				} else if (args[i] == "-o" || args[i] == "--output" || args[i] == "--output-file") {
 					i++;
 					if (File.Exists(args[i])) {

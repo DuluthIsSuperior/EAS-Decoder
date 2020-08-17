@@ -100,7 +100,7 @@ namespace EAS_Decoder {
 			return string.Compare(string.Join("", s1), 0, s2, 0, (int) n) == 0;
 		}
 
-		static DemodState EASFrame(DemodState s, char data) {
+		static DemodState EASFrame(DemodState s, char data, int idx) {
 			if (data != 0) {
 				if (s.eas.state == EAS_L2_IDLE) {
 					s.eas.state = EAS_L2_HEADER_SEARCH;
@@ -112,8 +112,10 @@ namespace EAS_Decoder {
 				if (s.eas.state == EAS_L2_HEADER_SEARCH && s.eas.headlen >= MAX_HEADER_LEN) {
 					if (IsEqualUpToN(s.eas.head_buf, HEADER_BEGIN, s.eas.headlen)) {
 						s.eas.state = EAS_L2_READING_MESSAGE;
+						s.headerStart = (uint) idx;
 					} else if (IsEqualUpToN(s.eas.head_buf, EOM, s.eas.headlen)) {
 						s.eas.state = EAS_L2_READING_EOM;
+						s.eomStart = (uint) idx;
 					} else {
 						s.eas.state = EAS_L2_IDLE;
 						s.eas.headlen = 0;
@@ -143,8 +145,10 @@ namespace EAS_Decoder {
 					}
 
 					Console.WriteLine($"EAS: {HEADER_BEGIN}{easMessage}");
+					s.headerEnd = (uint) idx;
 				} else if (s.eas.state == EAS_L2_READING_EOM) {
 					Console.WriteLine($"EAS: {EOM}");
+					s.eomEnd = (uint) idx;
 				}
 
 				s.eas.state = EAS_L2_IDLE;
@@ -163,6 +167,7 @@ namespace EAS_Decoder {
 			}
 			return sum;
 		}
+
 		public static DemodState EASDemod(DemodState s, float[] fbuffer, int length) {
 			float f;
 			float dll_gain;
@@ -225,10 +230,10 @@ namespace EAS_Decoder {
 						s.eas_2.byte_counter++;
 						if (s.eas_2.byte_counter == 8) {
 							if (CharacterAllowed((char) s.eas_2.lasts)) {
-								s = EASFrame(s, (char) s.eas_2.lasts);
+								s = EASFrame(s, (char) s.eas_2.lasts, idx);
 							} else {
 								s.eas_2.state = EAS_L1_IDLE;
-								s = EASFrame(s, (char) 0x00);
+								s = EASFrame(s, (char) 0x00, idx);
 							}
 							s.eas_2.byte_counter = 0;
 						}
@@ -265,6 +270,10 @@ namespace EAS_Decoder {
 		public class DemodState {
 			public State2 eas;
 			public State1 eas_2;
+			public uint headerStart;
+			public uint headerEnd;
+			public uint eomStart;
+			public uint eomEnd;
 		}
 	}
 }
