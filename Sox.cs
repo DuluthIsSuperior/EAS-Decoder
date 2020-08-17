@@ -211,8 +211,17 @@ namespace EAS_Decoder {
 								needToBuffer = false;
 							}
 						} else if (record && easRecord != null) {
-							easRecord.Write(buffer, 0, lastRead);
-							needToBuffer = false;
+							if (needToBuffer) {
+								while (!bufferBefore.IsEmpty) {
+									byte[] b = new byte[1];
+									if (bufferBefore.TryDequeue(out b[0])) {
+										easRecord.Write(b);
+									}
+									needToBuffer = false;
+								}
+							} else {
+								easRecord.Write(buffer, 0, lastRead);
+							}
 						} else if (!record && easRecord != null && !needToBuffer) {
 							easRecord.Write(buffer, 0, lastRead);
 							needToBuffer = true;
