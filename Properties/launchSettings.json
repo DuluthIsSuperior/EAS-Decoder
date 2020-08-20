@@ -2,7 +2,7 @@
   "profiles": {
     "EAS Decoder": {
       "commandName": "Project",
-      "commandLineArgs": "-i long.wav -t wav -r"
+      "commandLineArgs": "-i https://radio.weatherusa.net/NWR/KEC61_2.mp3 -t mp3 -o test.raw"
     }
   }
 }

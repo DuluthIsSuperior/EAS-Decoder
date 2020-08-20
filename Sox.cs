@@ -127,15 +127,6 @@ namespace EAS_Decoder {
 			return $"{(value < 10 ? "0" : "")}{value}";
 		}
 
-		//static void SaveEASRecording(ref FileStream easRecord, byte[] buffer, int lastRead, string fileName) {
-		//	easRecord.Write(buffer, 0, lastRead);
-		//	easRecord.Close();
-		//	easRecord = null;
-
-		//	ConvertRAWToMP3(fileName);
-		//	File.Delete($"{fileName}.raw");
-		//}
-
 		static void SaveEASRecording(ref FileStream easRecord, FixedSizeQueue<byte> bufferBefore, string fileName) {
 			while (!bufferBefore.IsEmpty) {
 				byte[] b = new byte[1];
@@ -156,12 +147,22 @@ namespace EAS_Decoder {
 		static FixedSizeQueue<byte> bufferBefore = null;
 		static FileStream easRecord = null;
 		static readonly string[] months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-		public static int ConvertAndDecode(string type, string inputFile, string outputFile) {
+		public static int ConvertAndDecode(string type, string inputFile, string inputFileType, string outputFile) {
 			if (soxDirectory == null) {
 				Console.WriteLine("error: Internal Error");
 				Environment.Exit(7);
 			}
-			ProcessStartInfo startInfo = GetSoxStartInfo($@"-V2 -V2 -t {type} {inputFile} -t raw -esigned-integer -b16 -r 22050 - remix 1", true, true);
+			//ProcessStartInfo startInfo = GetSoxStartInfo($@"-V2 -V2 -t {type} {inputFile} -t raw -e signed-integer -b16 -r 22050 - remix 1", true, true);
+			ProcessStartInfo startInfo = new ProcessStartInfo {
+				FileName = "cmd",
+				Arguments = $"/C \"ffmpeg -i {inputFile} -f {inputFileType} - | sox -V2 -V2 -t {inputFileType} - -t raw -e signed-integer -b 16 -r 22050 - remix 1\"",
+				WindowStyle = ProcessWindowStyle.Hidden,
+				UseShellExecute = false,
+				CreateNoWindow = false,
+				WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true
+			};
 			FileStream fs = null;
 			if (outputFile != null) {
 				File.WriteAllText(outputFile, string.Empty);
@@ -185,6 +186,7 @@ namespace EAS_Decoder {
 						record = info.Item1;
 						if (fs != null) {
 							fs.Write(buffer, 0, lastRead);
+							fs.Flush();
 						}
 					}
 
