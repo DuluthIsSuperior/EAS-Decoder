@@ -1,21 +1,16 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Runtime.CompilerServices;
-using System.Threading;
 
 namespace EAS_Decoder {
 	class Program {
 		static void DisplayHelp() {
 			Console.WriteLine("\nUsage:\n    EASDecoder [args]\n\n" +
 						"Arguments:\n" +
-						"    -s [DIRECTORY]: Directory to sox.exe (not required if sox is installed in its default location on any drive)\n" +
 						"    -i or --input [FILEPATH]: Input file to analyze\n" +
-						"                              Do NOT put a URL in this argument, audio files do not record properly if you do so\n" +
 						"    -t or --type [TYPE]: The type of the input file (assumed to be .raw if not specified)\n" +
 						"    -o or --output [FILEPATH]: Output file to convert input file to raw using sox\n" +
-						"    -r or --record: Saves a snippet of any alerts that this program reads in using parameters from the input file\n" +
+						"    -r or --record: Saves recordings of EAS alerts that this program reads in using parameters from the input file\n" +
 						"                    Does not work if the input file is already raw\n" +
 						"    -h or --help: Displays this help page");
 		}
@@ -56,21 +51,13 @@ namespace EAS_Decoder {
 		}
 
 		static void Main(string[] args) {
-			string soxDirectory = null;
 			string inputFileDirectory = null;
 			string inputFileType = "raw";
 			string outputFileDirectory = null;
 			bool recordOnEAS = false;
 
 			for (int i = 0; i < args.Length; i++) {
-				if (args[i] == "-s") {
-					i++;
-					if (File.Exists(args[i])) {
-						soxDirectory = args[i];
-					} else {
-						Console.WriteLine("Could not find sox.exe at the given directory");
-					}
-				} else if (args[i] == "-i" || args[i] == "--input-file" || args[i] == "--input") {
+				if (args[i] == "-i" || args[i] == "--input-file" || args[i] == "--input") {
 					i++;
 					if (File.Exists(args[i])) {
 						inputFileDirectory = args[i];
@@ -129,20 +116,18 @@ namespace EAS_Decoder {
 
 			if (inputFileDirectory != null) {
 				if (inputFileType != "raw") {
-					Sox.GetSoxProcess(soxDirectory);
-
 					int soxExitCode;
 					if (recordOnEAS) {
-						soxExitCode = Sox.GetFileInformation(inputFileDirectory);
+						soxExitCode = ProcessManager.GetFileInformation(inputFileDirectory);
 						DidSoxFail(soxExitCode);
 					}
 
-					soxExitCode = Sox.ConvertAndDecode(inputFileType, inputFileDirectory, inputFileType, outputFileDirectory);
+					soxExitCode = ProcessManager.ConvertAndDecode(inputFileDirectory, inputFileType, outputFileDirectory);
 					DidSoxFail(soxExitCode);
 				} else {
 					Decode.DecodeFromFile(inputFileDirectory);
 				}
-			} else {    // if both are null
+			} else {
 				Console.WriteLine("An input file or a streaming audio file is required");
 			}
 		}

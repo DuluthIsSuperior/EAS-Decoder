@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text;
 
 namespace EAS_Decoder {
 	public class FixedSizeQueue<T> : ConcurrentQueue<T> {
@@ -28,22 +23,7 @@ namespace EAS_Decoder {
 			}
 		}
 	}
-	static class Sox {
-		static string soxDirectory = null;
-
-		static ProcessStartInfo GetSoxStartInfo(string args, bool redirectStdout, bool redirectStderr) {
-			return new ProcessStartInfo {
-				FileName = soxDirectory,
-				Arguments = args,
-				WindowStyle = ProcessWindowStyle.Hidden,
-				UseShellExecute = false,
-				CreateNoWindow = false,
-				WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
-				RedirectStandardOutput = redirectStdout,
-				RedirectStandardError = redirectStderr
-			};
-		}
-
+	static class ProcessManager {
 		static int FailedToLoad(StreamReader stderr) {
 			bool MADFailedToLoad = false;
 			bool fileFailedToOpen = false;
@@ -62,58 +42,18 @@ namespace EAS_Decoder {
 			return MADFailedToLoad ? -1 : fileFailedToOpen ? -2 : 0;
 		}
 
-		public static string GetSoxProcess(string possibleDirectory) {
-			if (possibleDirectory == null) {
-				foreach (DriveInfo drive in DriveInfo.GetDrives()) {
-					string programFilesDirectory = $@"{drive.Name}Program Files (x86)";
-					if (Directory.Exists(programFilesDirectory)) {
-						string[] programFilesFolders = Directory.GetDirectories(programFilesDirectory);
-						foreach (string programFilesFolder in programFilesFolders) {
-							if (programFilesFolder.Contains("sox")) {
-								string possibleSoxDirectory = $@"{programFilesFolder}\sox.exe";
-								if (File.Exists(possibleSoxDirectory)) {
-									soxDirectory = possibleSoxDirectory;
-									break;
-								}
-							}
-						}
-						if (soxDirectory != null) {
-							break;
-						}
-					}
-				}
-			} else {
-				soxDirectory = possibleDirectory;
-			}
-
-			if (soxDirectory == null) {
-				Console.WriteLine("Could not find sox.exe. This program is required to demodulate audio files. If you have it installed outside of your " +
-					"Program Files (x86) folder, please use the -s <DIRECTORY> flag to link the sox executable");
-				Environment.Exit(1);
-			}
-
-			ProcessStartInfo startInfo = GetSoxStartInfo("--version", true, false);
-			bool isSox = false;
-			using (Process soxProcess = Process.Start(startInfo)) {
-				while (!soxProcess.StandardOutput.EndOfStream) {
-					string line = soxProcess.StandardOutput.ReadLine();
-					if (line.Contains("SoX")) {
-						isSox = true;
-					}
-				}
-				soxProcess.WaitForExit();
-			}
-
-			if (!isSox) {
-				Console.WriteLine("Invalid path to SoX or non-SoX executable launched");
-				Environment.Exit(3);
-			}
-
-			return soxDirectory;
-		}
-
 		static void ConvertRAWToMP3(string filename) {
-			ProcessStartInfo startInfo = GetSoxStartInfo($"-r 22050 -e signed -b 16 -t raw \"{filename}.raw\" -t mp3 \"{filename}.mp3\"", false, true);
+			Console.WriteLine($"Alert saved to {filename}.mp3");
+			ProcessStartInfo startInfo = new ProcessStartInfo {
+				FileName = "cmd",
+				Arguments = $"/C \"sox -r 22050 -e signed -b 16 -t raw \"{filename}.raw\" -t mp3 \"{filename}.mp3\"\"",
+				WindowStyle = ProcessWindowStyle.Hidden,
+				UseShellExecute = false,
+				CreateNoWindow = false,
+				WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+				RedirectStandardOutput = false,
+				RedirectStandardError = true
+			};
 			using (Process soxProcess = Process.Start(startInfo)) {
 				string line = soxProcess.StandardError.ReadLine();
 				while (line != null) {
@@ -147,12 +87,7 @@ namespace EAS_Decoder {
 		static FixedSizeQueue<byte> bufferBefore = null;
 		static FileStream easRecord = null;
 		static readonly string[] months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-		public static int ConvertAndDecode(string type, string inputFile, string inputFileType, string outputFile) {
-			if (soxDirectory == null) {
-				Console.WriteLine("error: Internal Error");
-				Environment.Exit(7);
-			}
-			//ProcessStartInfo startInfo = GetSoxStartInfo($@"-V2 -V2 -t {type} {inputFile} -t raw -e signed-integer -b16 -r 22050 - remix 1", true, true);
+		public static int ConvertAndDecode(string inputFile, string inputFileType, string outputFile) {
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = "cmd",
 				Arguments = $"/C \"ffmpeg -i {inputFile} -f {inputFileType} - | sox -V2 -V2 -t {inputFileType} - -t raw -e signed-integer -b 16 -r 22050 - remix 1\"",
@@ -177,7 +112,7 @@ namespace EAS_Decoder {
 				string fileName = null;
 				bool needToBuffer = true;
 
-				do {	// sox will not produce anything on stdout if an error occurs
+				do {	// sox nor ffmpeg will not produce anything on stdout if an error occurs
 					byte[] buffer = new byte[8192];
 					lastRead = baseStream.Read(buffer, 0, buffer.Length);
 					Tuple<bool, uint, uint> info = null;
@@ -233,9 +168,9 @@ namespace EAS_Decoder {
 				} while (lastRead > 0);
 
 				didNotLoad = FailedToLoad(soxProcess.StandardError);
-				//if (easRecord != null) {
-				//	SaveEASRecording(ref easRecord, bufferBefore, fileName);
-				//}
+				if (easRecord != null) {
+					SaveEASRecording(ref easRecord, bufferBefore, fileName);
+				}
 				soxProcess.WaitForExit();
 			}
 			return didNotLoad;
@@ -244,7 +179,16 @@ namespace EAS_Decoder {
 		public static int GetFileInformation(string filepath) {
 			fileCreated = DateTime.Now;
 
-			ProcessStartInfo startInfo = GetSoxStartInfo($"--i {filepath}", true, true);
+			ProcessStartInfo startInfo = new ProcessStartInfo {
+				FileName = "cmd",
+				Arguments = $"/C \"sox --i {filepath}\"",
+				WindowStyle = ProcessWindowStyle.Hidden,
+				UseShellExecute = false,
+				CreateNoWindow = false,
+				WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true
+			};
 
 			int didNotLoad;
 			using (Process soxProcess = Process.Start(startInfo)) {
