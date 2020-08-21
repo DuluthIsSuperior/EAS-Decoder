@@ -7,12 +7,16 @@ namespace EAS_Decoder {
 		static void DisplayHelp() {
 			Console.WriteLine("\nUsage:\n    EASDecoder [args]\n\n" +
 						"Arguments:\n" +
+						" *  -s or --sox [FILEPATH]: Directory to sox.exe\n" +
+						" *  -f or --ffmpeg [FILEPATH]: Directory to ffmpeg.exe\n" +
 						"    -i or --input [FILEPATH]: Input file to analyze\n" +
 						"    -t or --type [TYPE]: The type of the input file (assumed to be .raw if not specified)\n" +
 						"    -o or --output [FILEPATH]: Output file to convert input file to raw using sox\n" +
 						"    -r or --record: Saves recordings of EAS alerts that this program reads in using parameters from the input file\n" +
 						"                    Does not work if the input file is already raw\n" +
-						"    -h or --help: Displays this help page");
+						"    -h or --help: Displays this help page\n\n" +
+						"For more information on flags bulleted with an asterisk, type in the flag followed by -h or --help\n" +
+						"e.g. More information about -s can be displayed by typing \"EASDecoder -s -h\"");
 		}
 
 		static void DidSoxFail(int soxExitCode) {
@@ -57,7 +61,36 @@ namespace EAS_Decoder {
 			bool recordOnEAS = false;
 
 			for (int i = 0; i < args.Length; i++) {
-				if (args[i] == "-i" || args[i] == "--input-file" || args[i] == "--input") {
+				if (args[i] == "-s" || args[i] == "--sox") {
+					i++;
+					if (File.Exists(args[i])) {
+						ProcessManager.soxDirectory = args[i];
+					} else if (args[i] == "-h" || args[i] == "--help") {
+						Console.WriteLine("\nUsage:\n    EASDecoder [-s or --sox] [DIRECTORY]\n\n" +
+							"The program sox is required to convert the incoming audio file into raw data for this program to decode EAS tones.\n" +
+							"If sox is not added to Path in the Environment Variables, then this flag with a valid path to sox.exe is required.\n\n" +
+							"DIRECTORY: Directory to sox.exe");
+						Environment.Exit(0);
+					} else {
+						Console.WriteLine("error -s: Could not find: {args[i]}\n");
+						Environment.Exit(13);
+					}
+				} else if (args[i] == "-f" || args[i] == "--ffmpeg") {
+					i++;
+					if (File.Exists(args[i])) {
+						ProcessManager.ffmpegDirectory = args[i];
+					} else if (args[i] == "-h" || args[i] == "--help") {
+						Console.WriteLine("\nUsage:\n    EASDecoder [-f or --ffmpeg] [DIRECTORY]\n\n" +
+							"The program ffmpeg is required to dump the incoming audio file's data for this program to decode EAS tones.\n" +
+							"It also allows streaming audio to be used and monitored in real time.\n" +
+							"If ffmpeg isn't added to Path in the Environment Variables, then this flag with a valid path to ffmpeg.exe is required.\n\n" +
+							"DIRECTORY: Directory to ffmpeg.exe");
+						Environment.Exit(0);
+					} else {
+						Console.WriteLine("error -f: Could not find: {args[i]}\n");
+						Environment.Exit(14);
+					}
+				} else if (args[i] == "-i" || args[i] == "--input-file" || args[i] == "--input") {
 					i++;
 					if (File.Exists(args[i])) {
 						inputFileDirectory = args[i];

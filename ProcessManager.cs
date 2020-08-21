@@ -24,6 +24,29 @@ namespace EAS_Decoder {
 		}
 	}
 	static class ProcessManager {
+		static string _soxDirectory = null;
+		public static string soxDirectory {
+			get {
+				return _soxDirectory;
+			}
+			set {
+				if (_soxDirectory == null) {
+					_soxDirectory = value;
+				}
+			}
+		}
+		static string _ffmpegDirectory = null;
+		public static string ffmpegDirectory {
+			get {
+				return _ffmpegDirectory;
+			}
+			set {
+				if (_ffmpegDirectory == null) {
+					_ffmpegDirectory = value;
+				}
+			}
+		}
+
 		static int FailedToLoad(StreamReader stderr) {
 			bool MADFailedToLoad = false;
 			bool fileFailedToOpen = false;
