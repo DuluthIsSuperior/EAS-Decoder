@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 
 namespace EAS_Decoder {
 	public class FixedSizeQueue<T> : ConcurrentQueue<T> {
@@ -66,7 +67,7 @@ namespace EAS_Decoder {
 		}
 
 		static void ConvertRAWToMP3(string filename) {
-			Console.WriteLine($"Alert saved to {filename}.mp3");
+			Console.WriteLine($"Alert saved to {filename}.mp3\n");
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = "cmd",
 				Arguments = $"/C \"sox -r 22050 -e signed -b 16 -t raw \"{filename}.raw\" -t mp3 \"{filename}.mp3\"\"",
@@ -105,6 +106,10 @@ namespace EAS_Decoder {
 			File.Delete($"{fileName}.raw");
 		}
 
+		static string Commas(ulong value) {
+			return string.Format("{0:#,###0}", value);
+		}
+
 		public static uint samplerate;
 		static DateTime fileCreated = DateTime.Now;
 		static FixedSizeQueue<byte> bufferBefore = null;
@@ -121,6 +126,7 @@ namespace EAS_Decoder {
 				RedirectStandardOutput = true,
 				RedirectStandardError = true
 			};
+
 			FileStream fs = null;
 			if (outputFile != null) {
 				File.WriteAllText(outputFile, string.Empty);
@@ -128,24 +134,42 @@ namespace EAS_Decoder {
 			}
 
 			int didNotLoad;
+			ulong bytesReadIn = 0;
 			using (Process soxProcess = Process.Start(startInfo)) {
+				Console.WriteLine("info: ffmpeg and sox have started");
+				soxProcess.EnableRaisingEvents = true;
+				soxProcess.BeginErrorReadLine();
+				soxProcess.ErrorDataReceived += new DataReceivedEventHandler((s, e) => {
+					// needed to flush standard error so that it doesn't cause the process to hang
+				});
+
 				FileStream baseStream = (FileStream) soxProcess.StandardOutput.BaseStream;
 				int lastRead = 0;
 				bool record = false;
+				bool lastRecord = false;
 				string fileName = null;
 				bool needToBuffer = true;
 
-				do {	// sox nor ffmpeg will not produce anything on stdout if an error occurs
+				Console.WriteLine();
+				do {    // sox nor ffmpeg will not produce anything on stdout if an error occurs
 					byte[] buffer = new byte[8192];
 					lastRead = baseStream.Read(buffer, 0, buffer.Length);
+					bytesReadIn += (ulong) lastRead;
 					Tuple<bool, uint, uint> info = null;
 					if (lastRead > 0) {
 						info = Decode.DecodeEAS(buffer, lastRead);
+						lastRecord = record;
 						record = info.Item1;
 						if (fs != null) {
 							fs.Write(buffer, 0, lastRead);
 							fs.Flush();
 						}
+					}
+					if (!record && !lastRecord) {
+						Console.CursorTop -= 1;
+						Console.WriteLine($"Total bytes read in: {Commas(bytesReadIn)}");
+					} else if (!record && lastRecord) {
+						Console.WriteLine();
 					}
 
 					if (bufferBefore != null) {
@@ -154,10 +178,12 @@ namespace EAS_Decoder {
 								bufferBefore.Enqueue(buffer[i]);
 							}
 							if (easRecord != null && bufferBefore.Size == bufferBefore.Count) {
+								Console.WriteLine("Stopped recording EAS alert");
 								SaveEASRecording(ref easRecord, bufferBefore, fileName);
 							}
 						}
 						if (record && easRecord == null) {
+							Console.WriteLine("Recording EAS alert");
 							DateTime recordingStarted = fileCreated.AddSeconds(info.Item2 / samplerate);
 							string month = $"{AddLeadingZero(recordingStarted.Month)}{months[recordingStarted.Month - 1]}";
 							string time = $"{AddLeadingZero(recordingStarted.Hour)}{AddLeadingZero(recordingStarted.Minute)}{AddLeadingZero(recordingStarted.Second)}";
@@ -190,13 +216,14 @@ namespace EAS_Decoder {
 					}
 				} while (lastRead > 0);
 
-				didNotLoad = FailedToLoad(soxProcess.StandardError);
+				//didNotLoad = FailedToLoad(soxProcess.StandardError);
 				if (easRecord != null) {
 					SaveEASRecording(ref easRecord, bufferBefore, fileName);
 				}
 				soxProcess.WaitForExit();
 			}
-			return didNotLoad;
+			Console.ReadKey();
+			return 0;
 		}
 
 		public static int GetFileInformation(string filepath) {

@@ -33,6 +33,11 @@ namespace EAS_Decoder {
 
 		public static int bytesReadIn = 0;
 		static bool record = false;
+
+		static void PrintMessageDetails(string message) {
+			Console.WriteLine($"\nMESSAGE: {message}\n");
+		}
+
 		public static Tuple<bool, uint, uint> DecodeEAS(byte[] raw, int i) {
 			uint overlap = (uint) DemodEAS.overlap;
 			uint startByte = 0;
@@ -70,6 +75,7 @@ namespace EAS_Decoder {
 						headerLastDetected = dem_st.headerEnd + (uint) bytesReadIn;
 						if (++headerTonesReadIn == 3) {
 							headerTonesReadIn = 0;
+							PrintMessageDetails(dem_st.message);
 						}
 						dem_st.headerStart = 0;
 						dem_st.headerEnd = 0;
@@ -94,6 +100,7 @@ namespace EAS_Decoder {
 						if (headerTonesReadIn > 0 && bytesReadIn + bytesToRead - headerLastDetected > ProcessManager.samplerate * 5) {
 							headerTonesReadIn = 0;
 							Console.WriteLine("Timeout occured waiting for EAS header tones");
+							PrintMessageDetails(dem_st.message);
 						}
 						if (eomTonesReadIn > 0 && bytesReadIn + bytesToRead - eomLastDetected > ProcessManager.samplerate * 5) {
 							eomTonesReadIn = 0;

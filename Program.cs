@@ -87,7 +87,7 @@ namespace EAS_Decoder {
 							"DIRECTORY: Directory to ffmpeg.exe");
 						Environment.Exit(0);
 					} else {
-						Console.WriteLine("error -f: Could not find: {args[i]}\n");
+						Console.WriteLine($"error -f: Could not find: {args[i]}\n");
 						Environment.Exit(14);
 					}
 				} else if (args[i] == "-i" || args[i] == "--input-file" || args[i] == "--input") {
@@ -100,6 +100,7 @@ namespace EAS_Decoder {
 							Environment.Exit(4);
 						}
 						inputFileDirectory = args[i];
+						Console.WriteLine($"info: Successfully pinged {inputFileDirectory}");
 					}
 				} else if (args[i] == "-t" || args[i] == "--type") {
 					i++;
@@ -149,6 +150,7 @@ namespace EAS_Decoder {
 
 			if (inputFileDirectory != null) {
 				if (inputFileType != "raw") {
+					Console.WriteLine($"info: Monitoring {inputFileDirectory}");
 					int soxExitCode;
 					if (recordOnEAS) {
 						soxExitCode = ProcessManager.GetFileInformation(inputFileDirectory);

@@ -144,7 +144,8 @@ namespace EAS_Decoder {
 						easMessage += c;
 					}
 
-					Console.WriteLine($"EAS: {HEADER_BEGIN}{easMessage}");
+					s.message = $"{HEADER_BEGIN}{easMessage}";
+					Console.WriteLine($"EAS: {s.message}");
 					s.headerEnd = (uint) idx;
 				} else if (s.eas.state == EAS_L2_READING_EOM) {
 					Console.WriteLine($"EAS: {EOM}");
@@ -274,6 +275,7 @@ namespace EAS_Decoder {
 			public uint headerEnd;
 			public uint eomStart;
 			public uint eomEnd;
+			public string message;
 		}
 	}
 }
