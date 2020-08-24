@@ -161,10 +161,10 @@ namespace EAS_Decoder {
 			if (Program.livestream) {
 				Console.WriteLine("Please listen to the audio for an accurate expiration time");
 				if (urgentIssuer || urgentAlert || nationalAlert) {
-					Console.WriteLine("\nURGENT!");
+					Console.WriteLine("\nURGENT!\n");
 				}
 			}
-			Console.WriteLine();
+			Console.WriteLine($"Sent by {message[^9..^1]}\n");
 			if (unknownCounty.Count > 0) {
 				Console.WriteLine($"Unknown county code{(unknownCounty.Count != 1 ? "s" : "")} found");
 				foreach (string county in unknownCounty) {
