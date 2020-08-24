@@ -133,7 +133,6 @@ namespace EAS_Decoder {
 				fs = new FileStream(outputFile, FileMode.OpenOrCreate);
 			}
 
-			int didNotLoad;
 			ulong bytesReadIn = 0;
 			using (Process soxProcess = Process.Start(startInfo)) {
 				Console.WriteLine("info: ffmpeg and sox have started");
@@ -222,7 +221,6 @@ namespace EAS_Decoder {
 				}
 				soxProcess.WaitForExit();
 			}
-			Console.ReadKey();
 			return 0;
 		}
 

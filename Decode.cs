@@ -17,6 +17,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace EAS_Decoder {
@@ -34,8 +35,143 @@ namespace EAS_Decoder {
 		public static int bytesReadIn = 0;
 		static bool record = false;
 
+		static string GetEventName(string eventCode, out bool urgent, out bool national) {
+			urgent = false;
+			national = false;
+			string subCode = eventCode.Substring(0, 2);
+			if (eventCode[2] == 'A') {  // watch
+				     if (subCode == "AV") { return "Avalanche Watch"; }
+				else if (subCode == "CF") { return "Coastal Flood Watch"; }
+				else if (subCode == "FF") { return "Flash Flood Watch"; }
+				else if (subCode == "FL") { return "Flood Watch"; }
+				else if (subCode == "HU") { return "Hurricane Watch"; }
+				else if (subCode == "HW") { return "High Wind Watch"; }
+				else if (subCode == "SV") { return "Severe Thunderstorm Watch"; }
+				else if (subCode == "TO") { return "Tornado Watch"; }
+				else if (subCode == "TR") { return "Tropical Storm Watch"; }
+				else if (subCode == "TS") { return "Tsunami Watch"; }
+				else if (subCode == "WS") { return "Winter Storm Watch"; }
+				return "Unrecognized Watch";
+			} else if (eventCode[2] == 'W') {
+				     if (subCode == "AV") { return "Avalanche Warning"; }
+				else if (subCode == "BZ") { return "Blizzard Warning"; }
+				else if (subCode == "CD") { urgent = true; return "Civil Danger Warning"; }
+				else if (subCode == "CF") { return "Coastal Flood Warning"; }
+				else if (subCode == "DS") { return "Dust Storm Warning"; }
+				else if (subCode == "EQ") { return "Earthquake Warning"; }
+				else if (subCode == "FF") { return "Flash Flood Warning"; }
+				else if (subCode == "FL") { return "Flood Warning"; }
+				else if (subCode == "FR") { return "Fire Warning"; }
+				else if (subCode == "HM") { urgent = true; return "Hazardous Materials Warning"; }
+				else if (subCode == "HU") { return "Hurricane Warning"; }
+				else if (subCode == "HW") { return "High Wind Warning"; }
+				else if (subCode == "LE") { urgent = true; return "Law Enforcement Warning"; }
+				else if (subCode == "NU") { urgent = true; return "Nuclear Power Plant Warning"; }
+				else if (subCode == "RH") { urgent = true; return "Radiological Hazard Warning"; }
+				else if (subCode == "SM") { return "Special Marine Warning"; }
+				else if (subCode == "SP") { urgent = true; return "Shelter In-Place Warning"; }
+				else if (subCode == "TR") { return "Tropical Storm Warning"; }
+				else if (subCode == "TS") { return "Tsunami Warning"; }
+				else if (subCode == "VO") { return "Volcano Warning"; }
+				else if (subCode == "WS") { return "Winter Storm Warning"; }
+				return "Unrecognized Warning";
+			} else if (eventCode[2] == 'S') {
+				     if (subCode == "FF") { return "Flash Flood Statement"; }
+				else if (subCode == "FL") { return "Flood Statement"; }
+				else if (subCode == "HL") { return "Hurricane Statement"; }
+				else if (subCode == "SP") { return "Special Weather Statement"; }
+				else if (subCode == "SV") { return "Severe Weather Statement"; }
+				return "Unrecognized Statement";
+			} else if (eventCode[2] == 'E') {
+					 if (subCode == "CA") { return "Child Abduction Emergency"; }
+				else if (subCode == "LA") { return "Local Area Emergency"; }
+				else if (subCode == "TO") { return "911 Telephone Outage Emergency"; }
+				return "Unrecognized Emergency";
+			} else if (eventCode == "SVR") { return "Severe Thunderstorm Warning"; }
+			  else if (eventCode == "TOR") { return "Tornado Warning"; }
+			  else if (eventCode == "ADR") { return "Administrative Message"; }
+			  else if (eventCode == "CEM") { return "Civil Emergency Message"; }
+			  else if (eventCode == "DMO") { return "Practice/Demo"; }
+			  else if (eventCode == "EAN") { national = true;  return "Emergency Action Notification"; }
+			  else if (eventCode == "EAT") { national = true; return "Emergency Action Termination"; }
+			  else if (eventCode == "EVI") { national = true; return "Evacuation Immediate"; }
+			  else if (eventCode == "NIC") { return "National Information Center"; }
+			  else if (eventCode == "NMN") { return "Network Message Notification"; }
+			  else if (eventCode == "NPT") { return "National Periodic Test"; }
+			  else if (eventCode == "RMT") { return "Required Monthly Test"; }
+			  else if (eventCode == "RWT") { return "Required Weekly Test"; }
+			return $"Unrecognized Alert ({eventCode})";
+		}
+
 		static void PrintMessageDetails(string message) {
-			Console.WriteLine($"\nMESSAGE: {message}\n");
+			bool urgentIssuer = false;
+
+			string issuerCode = message[5..8];
+			string issuer;
+			switch (issuerCode) {
+				case "PEP":
+					issuer = "A Primary Entry Point System";
+					urgentIssuer = true;
+					break;
+				case "CIV":
+					issuer = "Civil Authorities";
+					break;
+				case "WXR":
+					issuer = "The National Weather Service";
+					break;
+				case "EAS":
+					issuer = "An Emergency Alert System Participant";
+					break;
+				case "EAN":
+					issuer = "Emergency Action Notification Network";
+					urgentIssuer = true;
+					break;
+				default:
+					issuer = "An Unknown Source";
+					break;
+			}
+
+			string eventCode = message[9..12];
+			string eventName = GetEventName(eventCode, out bool urgentAlert, out bool nationalAlert);
+
+			Console.WriteLine($"\n{(nationalAlert ? "NATIONAL ALERT" : "EMERGENCY ALERT SYSTEM")}\n\n" +
+				$"{issuer} has issued a {eventName} for");
+			string[] SAMECountyCodes = message[13..^23].Split('-');
+			List<string> unknownCounty = new List<string>();
+			for (int i = 0; i < SAMECountyCodes.Length; i++) {
+				string countyCode = SAMECountyCodes[i];
+				if (Program.countyCodes.ContainsKey(countyCode)) {
+					Console.Write(Program.countyCodes[countyCode]);
+					if (i != SAMECountyCodes.Length - 1) {
+						Console.Write(" - ");
+					}
+				} else {
+					unknownCounty.Add(countyCode);
+				}
+			}
+			Console.WriteLine();
+			int julianDate = int.Parse(message[^17..^14]);
+			string issuedDate = new DateTime(DateTime.Now.Year, 1, 1).AddDays(julianDate - 1).ToShortDateString();
+			string issuedTime = message[^14..^10];
+			string duration = message[^22..^18];
+			int hours = int.Parse(duration[0..2]);
+			int minutes = int.Parse(duration[2..4]);
+			Console.WriteLine($"on {issuedDate} at {issuedTime[0..2]}:{issuedTime[2..4]} for {hours} hour{(hours != 1 ? "s" : "")} and {minutes} minute{(minutes != 1 ? "s" : "")}");
+
+			if (Program.livestream) {
+				Console.WriteLine("Please listen to the audio for an accurate expiration time");
+				if (urgentIssuer || urgentAlert || nationalAlert) {
+					Console.WriteLine("\nURGENT!");
+				}
+			}
+			Console.WriteLine();
+			if (unknownCounty.Count > 0) {
+				Console.WriteLine($"Unknown county code{(unknownCounty.Count != 1 ? "s" : "")} found");
+				foreach (string county in unknownCounty) {
+					Console.WriteLine(county);
+				}
+				Console.WriteLine("If audio quality is poor, this maybe an error. If these codes are valid, please run this program with the '-u' flag.\n");
+			}
 		}
 
 		public static Tuple<bool, uint, uint> DecodeEAS(byte[] raw, int i) {
