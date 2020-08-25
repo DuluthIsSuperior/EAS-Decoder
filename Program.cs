@@ -1,9 +1,18 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.IO;
 using System.Net;
 
 namespace EAS_Decoder {
 	class Program {
+		public static bool livestream {
+			get;
+			private set;
+		}
+		public static JObject countyCodes {
+			get;
+			private set;
+		}
 		static void DisplayHelp() {
 			Console.WriteLine("\nUsage:\n    EASDecoder [args]\n\n" +
 						"Arguments:\n" +
@@ -13,6 +22,7 @@ namespace EAS_Decoder {
 						"    -t or --type [TYPE]: The type of the input file (assumed to be .raw if not specified)\n" +
 						"    -o or --output [FILEPATH]: Output file to convert input file to raw using sox\n" +
 						"    -r or --record: Saves recordings of EAS alerts that this program reads in using parameters from the input file\n" +
+						"    -u or --update: Attempts to update the local copy of county and event/alert codes\n" +
 						"                    Does not work if the input file is already raw\n" +
 						"    -h or --help: Displays this help page\n\n" +
 						"For more information on flags bulleted with an asterisk, type in the flag followed by -h or --help\n" +
@@ -99,9 +109,34 @@ namespace EAS_Decoder {
 							Console.WriteLine($"Could not open file or URL: {args[i]}");
 							Environment.Exit(4);
 						}
+						livestream = true;
 						inputFileDirectory = args[i];
 						Console.WriteLine($"info: Successfully pinged {inputFileDirectory}");
 					}
+				} else if (args[i] == "-u" || args[i] == "--update") {
+					Console.Write("Downloading SAME Codes... ");
+					JObject SAMECodes = new JObject();
+					string URL = "https://www.weather.gov/source/nwr/SameCode.txt";
+					HttpWebRequest request = (HttpWebRequest) WebRequest.Create(URL);
+					request.Headers.Add(HttpRequestHeader.UserAgent, "blah");
+					HttpWebResponse response;
+					try {
+						using (response = (HttpWebResponse) request.GetResponse()) {
+							using (StreamReader stream = new StreamReader(response.GetResponseStream())) {
+								while (!stream.EndOfStream) {
+									string line = stream.ReadLine();
+									string SAMECode = line[0..6];
+									string location = line[7..];
+									SAMECodes[SAMECode] = location;
+								}
+							}
+						}
+						File.WriteAllText("SAMECodes.json", SAMECodes.ToString());
+					} catch (WebException e) {
+						response = (HttpWebResponse) e.Response;
+						Console.WriteLine($"Could not update SAME county codes - a {response.StatusCode} error was returned accessing {URL}");
+					}
+					Console.WriteLine("Done");
 				} else if (args[i] == "-t" || args[i] == "--type") {
 					i++;
 					inputFileType = args[i];
@@ -148,6 +183,12 @@ namespace EAS_Decoder {
 				}
 			}
 
+			try {
+				string SAMEJson = File.ReadAllText("SAMECodes.json");
+				countyCodes = JObject.Parse(SAMEJson);
+			} catch (Exception) {
+				Console.WriteLine("There was a problem loading in the database of SAME county codes.\nPlease run this program next time using the '-u' flag.");
+			}
 			if (inputFileDirectory != null) {
 				if (inputFileType != "raw") {
 					Console.WriteLine($"info: Monitoring {inputFileDirectory}");

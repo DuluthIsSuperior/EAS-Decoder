@@ -133,7 +133,6 @@ namespace EAS_Decoder {
 				fs = new FileStream(outputFile, FileMode.OpenOrCreate);
 			}
 
-			int didNotLoad;
 			ulong bytesReadIn = 0;
 			using (Process soxProcess = Process.Start(startInfo)) {
 				Console.WriteLine("info: ffmpeg and sox have started");
@@ -216,13 +215,11 @@ namespace EAS_Decoder {
 					}
 				} while (lastRead > 0);
 
-				//didNotLoad = FailedToLoad(soxProcess.StandardError);
 				if (easRecord != null) {
 					SaveEASRecording(ref easRecord, bufferBefore, fileName);
 				}
 				soxProcess.WaitForExit();
 			}
-			Console.ReadKey();
 			return 0;
 		}
 
