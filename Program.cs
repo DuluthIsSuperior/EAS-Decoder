@@ -1,16 +1,9 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.IO;
 using System.Net;
 
 namespace EAS_Decoder {
 	class Program {
-		public static bool livestream {
-			get;
-			private set;
-		}
-
 		static void DisplayHelp() {
 			Console.WriteLine("\nUsage:\n    EASDecoder [args]\n\n" +
 						"Arguments:\n" +
@@ -21,7 +14,6 @@ namespace EAS_Decoder {
 						"    -o or --output [FILEPATH]: Output file to convert input file to raw using sox\n" +
 						"    -r or --record: Saves recordings of EAS alerts that this program reads in using parameters from the input file\n" +
 						"                    Does not work if the input file is already raw\n" +
-						"    -u or --update: Attempts to update the local copy of county and event/alert codes\n" +
 						"    -h or --help: Displays this help page\n\n" +
 						"For more information on flags bulleted with an asterisk, type in the flag followed by -h or --help\n" +
 						"e.g. More information about -s can be displayed by typing \"EASDecoder -s -h\"");
@@ -62,10 +54,6 @@ namespace EAS_Decoder {
 			}
 		}
 
-		public static JObject countyCodes {
-			get;
-			private set;
-		}
 		static void Main(string[] args) {
 			string inputFileDirectory = null;
 			string inputFileType = "raw";
@@ -76,7 +64,7 @@ namespace EAS_Decoder {
 				if (args[i] == "-s" || args[i] == "--sox") {
 					i++;
 					if (File.Exists(args[i])) {
-						ProcessManager.SoxDirectory = args[i];
+						ProcessManager.soxDirectory = args[i];
 					} else if (args[i] == "-h" || args[i] == "--help") {
 						Console.WriteLine("\nUsage:\n    EASDecoder [-s or --sox] [DIRECTORY]\n\n" +
 							"The program sox is required to convert the incoming audio file into raw data for this program to decode EAS tones.\n" +
@@ -90,7 +78,7 @@ namespace EAS_Decoder {
 				} else if (args[i] == "-f" || args[i] == "--ffmpeg") {
 					i++;
 					if (File.Exists(args[i])) {
-						ProcessManager.FfmpegDirectory = args[i];
+						ProcessManager.ffmpegDirectory = args[i];
 					} else if (args[i] == "-h" || args[i] == "--help") {
 						Console.WriteLine("\nUsage:\n    EASDecoder [-f or --ffmpeg] [DIRECTORY]\n\n" +
 							"The program ffmpeg is required to dump the incoming audio file's data for this program to decode EAS tones.\n" +
@@ -112,7 +100,6 @@ namespace EAS_Decoder {
 							Environment.Exit(4);
 						}
 						inputFileDirectory = args[i];
-						livestream = true;
 						Console.WriteLine($"info: Successfully pinged {inputFileDirectory}");
 					}
 				} else if (args[i] == "-t" || args[i] == "--type") {
@@ -152,34 +139,6 @@ namespace EAS_Decoder {
 					string outputPath = $"{args[i]}.{inputFileType}.raw";
 					Console.WriteLine($"Output file will be written to {outputPath}");
 					outputFileDirectory = outputPath;
-				} else if (args[i] == "-u" || args[i] == "--update") {
-
-					Console.Write("Downloading SAME Codes... ");
-					JObject SAMECodes = new JObject();
-					string URL = "https://www.weather.gov/source/nwr/SameCode.txt";
-					HttpWebRequest request = (HttpWebRequest) WebRequest.Create(URL);
-					request.Headers.Add(HttpRequestHeader.UserAgent, "blah");
-					HttpWebResponse response;
-					try {
-						using (response = (HttpWebResponse) request.GetResponse()) {
-							using (StreamReader stream = new StreamReader(response.GetResponseStream())) {
-								while (!stream.EndOfStream) {
-									string line = stream.ReadLine();
-									string SAMECode = line[0..6];
-									string location = line[7..];
-									SAMECodes[SAMECode] = location;
-								}
-							}
-						}
-						File.WriteAllText("SAMECodes.json", SAMECodes.ToString());
-					} catch (WebException e) {
-						response = (HttpWebResponse) e.Response;
-						Console.WriteLine($"Could not update SAME county codes - a {response.StatusCode} error was returned accessing {URL}");
-					}
-					Console.WriteLine("Done");
-
-
-
 				} else if (args[i] == "-h" || args[i] == "--help") {
 					DisplayHelp();
 					Environment.Exit(0);
@@ -187,13 +146,6 @@ namespace EAS_Decoder {
 					Console.WriteLine($"Invalid argument: {args[i]}");
 					Environment.Exit(2);
 				}
-			}
-
-			try {
-				string SAMEJson = File.ReadAllText("SAMECodes.json");
-				countyCodes = JObject.Parse(SAMEJson);
-			} catch (Exception) {
-				Console.WriteLine("There was a problem loading in the database of SAME county codes.\nPlease run this program next time using the '-u' flag.");
 			}
 
 			if (inputFileDirectory != null) {
