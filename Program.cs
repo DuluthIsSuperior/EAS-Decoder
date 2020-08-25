@@ -76,7 +76,7 @@ namespace EAS_Decoder {
 				if (args[i] == "-s" || args[i] == "--sox") {
 					i++;
 					if (File.Exists(args[i])) {
-						ProcessManager.soxDirectory = args[i];
+						ProcessManager.SoxDirectory = args[i];
 					} else if (args[i] == "-h" || args[i] == "--help") {
 						Console.WriteLine("\nUsage:\n    EASDecoder [-s or --sox] [DIRECTORY]\n\n" +
 							"The program sox is required to convert the incoming audio file into raw data for this program to decode EAS tones.\n" +
@@ -90,7 +90,7 @@ namespace EAS_Decoder {
 				} else if (args[i] == "-f" || args[i] == "--ffmpeg") {
 					i++;
 					if (File.Exists(args[i])) {
-						ProcessManager.ffmpegDirectory = args[i];
+						ProcessManager.FfmpegDirectory = args[i];
 					} else if (args[i] == "-h" || args[i] == "--help") {
 						Console.WriteLine("\nUsage:\n    EASDecoder [-f or --ffmpeg] [DIRECTORY]\n\n" +
 							"The program ffmpeg is required to dump the incoming audio file's data for this program to decode EAS tones.\n" +

@@ -34,9 +34,6 @@ using System.Reflection.Emit;
 namespace EAS_Decoder {
 
 	static class DemodEAS {
-		public static string name = "EAS";
-		public static bool float_samples = true;
-		public static int samplerate = FREQ_SAMP;
 		public static int overlap = CORRLEN;
 
 		const double FREQ_MARK = 2083.3;
@@ -53,9 +50,7 @@ namespace EAS_Decoder {
 		const int SPHASEINC = (int) (0x10000u * BAUD * SUBSAMP / FREQ_SAMP);
 		const int DLL_MAX_INC = 8192;
 		const byte PREAMBLE = (byte) '\xAB';    // unsigned char
-		const string HEADER_BEGIN = "ZCZC";
 		const int MAX_HEADER_LEN = 4;
-		const string EOM = "NNNN";
 		const int MAX_MSG_LEN = 268;
 		public const int EAS_L2_IDLE = 0;
 		public const int EAS_L2_HEADER_SEARCH = 1;
@@ -110,10 +105,10 @@ namespace EAS_Decoder {
 					s.eas.headlen++;
 				}
 				if (s.eas.state == EAS_L2_HEADER_SEARCH && s.eas.headlen >= MAX_HEADER_LEN) {
-					if (IsEqualUpToN(s.eas.head_buf, HEADER_BEGIN, s.eas.headlen)) {
+					if (IsEqualUpToN(s.eas.head_buf, "ZCZC", s.eas.headlen)) {
 						s.eas.state = EAS_L2_READING_MESSAGE;
 						s.headerStart = (uint) idx;
-					} else if (IsEqualUpToN(s.eas.head_buf, EOM, s.eas.headlen)) {
+					} else if (IsEqualUpToN(s.eas.head_buf, "NNNN", s.eas.headlen)) {
 						s.eas.state = EAS_L2_READING_EOM;
 						s.eomStart = (uint) idx;
 					} else {
@@ -144,11 +139,11 @@ namespace EAS_Decoder {
 						easMessage += c;
 					}
 
-					s.message = $"{HEADER_BEGIN}{easMessage}";
+					s.message = $"ZCZC{easMessage}";
 					Console.WriteLine($"EAS: {s.message}");
 					s.headerEnd = (uint) idx;
 				} else if (s.eas.state == EAS_L2_READING_EOM) {
-					Console.WriteLine($"EAS: {EOM}");
+					Console.WriteLine($"EAS: NNNN");
 					s.eomEnd = (uint) idx;
 				}
 
@@ -160,19 +155,15 @@ namespace EAS_Decoder {
 			return s;
 		}
 		static float Mac(float[] a, int start, float[] b, uint size) {
-			int aIdx = start;
 			int bIdx = 0;
 			float sum = 0;
 			for (int i = 0; i < size; i++) {
-				sum += a[aIdx++] * b[bIdx++];
+				sum += a[start++] * b[bIdx++];
 			}
 			return sum;
 		}
 
 		public static DemodState EASDemod(DemodState s, float[] fbuffer, int length) {
-			float f;
-			float dll_gain;
-
 			int idx = 0;
 			if (s.eas_2.subsamp != 0) {
 				int numfill = SUBSAMP - (int) s.eas_2.subsamp;
@@ -191,7 +182,7 @@ namespace EAS_Decoder {
 					break;
 				}
 				idx += SUBSAMP;
-				f = (float) Math.Pow(Mac(fbuffer, idx, eascorr_mark_i, CORRLEN), 2.0) +
+				float f = (float) Math.Pow(Mac(fbuffer, idx, eascorr_mark_i, CORRLEN), 2.0) +
 					(float) Math.Pow(Mac(fbuffer, idx, eascorr_mark_q, CORRLEN), 2.0) -
 					(float) Math.Pow(Mac(fbuffer, idx, eascorr_space_i, CORRLEN), 2.0) -
 					(float) Math.Pow(Mac(fbuffer, idx, eascorr_space_q, CORRLEN), 2.0);
@@ -203,7 +194,7 @@ namespace EAS_Decoder {
 					s.eas_2.dcd_integrator -= 1;
 				}
 
-				dll_gain = 0.5F;
+				float dll_gain = 0.5F;
 
 				if (((s.eas_2.dcd_shreg ^ (s.eas_2.dcd_shreg >> 1)) & 1) == 1) {
 					if (s.eas_2.sphase < (0x8000u - (SPHASEINC / 8))) {

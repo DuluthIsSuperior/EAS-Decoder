@@ -15,18 +15,17 @@ namespace EAS_Decoder {
 		}
 
 		public new void Enqueue(T obj) {
-			base.Enqueue(obj);
+			Enqueue(obj);
 			lock (syncObject) {
-				while (base.Count > Size) {
-					T outObj;
-					base.TryDequeue(out outObj);
+				while (Count > Size) {
+					TryDequeue(out T outObj);
 				}
 			}
 		}
 	}
 	static class ProcessManager {
 		static string _soxDirectory = null;
-		public static string soxDirectory {
+		public static string SoxDirectory {
 			get {
 				return _soxDirectory;
 			}
@@ -37,7 +36,7 @@ namespace EAS_Decoder {
 			}
 		}
 		static string _ffmpegDirectory = null;
-		public static string ffmpegDirectory {
+		public static string FfmpegDirectory {
 			get {
 				return _ffmpegDirectory;
 			}
@@ -48,6 +47,7 @@ namespace EAS_Decoder {
 			}
 		}
 
+		// TODO: Fix so that ffmpeg and sox can print errors
 		static int FailedToLoad(StreamReader stderr) {
 			bool MADFailedToLoad = false;
 			bool fileFailedToOpen = false;
@@ -215,7 +215,6 @@ namespace EAS_Decoder {
 					}
 				} while (lastRead > 0);
 
-				//didNotLoad = FailedToLoad(soxProcess.StandardError);
 				if (easRecord != null) {
 					SaveEASRecording(ref easRecord, bufferBefore, fileName);
 				}

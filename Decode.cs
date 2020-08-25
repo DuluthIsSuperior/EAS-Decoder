@@ -23,9 +23,9 @@ using System.IO;
 namespace EAS_Decoder {
 	static class Decode {
 		public static DemodEAS.DemodState dem_st = DemodEAS.EASInit(new DemodEAS.DemodState());
-		static short[] buffer = new short[8192];
-		static float[] fbuf = new float[16384];
-		static uint global_fbuf_cnt = 0;
+		static readonly short[] buffer = new short[8192];
+		static readonly float[] fbuf = new float[16384];
+		static uint fbuf_cnt = 0;
 
 		public static uint headerLastDetected = 0;
 		public static int headerTonesReadIn = 0;
@@ -170,7 +170,7 @@ namespace EAS_Decoder {
 				foreach (string county in unknownCounty) {
 					Console.WriteLine(county);
 				}
-				Console.WriteLine("If audio quality is poor, this maybe an error. If these codes are valid, please run this program with the '-u' flag.\n");
+				Console.WriteLine("If audio quality is poor, this might be an error. If these codes are valid, please run this program with the '-u' flag.\n");
 			}
 		}
 
@@ -195,13 +195,13 @@ namespace EAS_Decoder {
 						break;
 					}
 					idx++;
-					fbuf[global_fbuf_cnt++] = buffer[idx] * (1.0F / 32768.0F);
+					fbuf[fbuf_cnt++] = buffer[idx] * (1.0F / 32768.0F);
 				}
 				if (i != 0) {
 					Console.WriteLine("warn: uneven number of samples read");
 				}
-				if (global_fbuf_cnt > overlap) {
-					dem_st = DemodEAS.EASDemod(dem_st, fbuf, (int) (global_fbuf_cnt - overlap));   // process buffer
+				if (fbuf_cnt > overlap) {
+					dem_st = DemodEAS.EASDemod(dem_st, fbuf, (int) (fbuf_cnt - overlap));   // process buffer
 					if (dem_st.headerStart != 0) {
 						record = true;
 						dem_st.headerStart += (uint) bytesReadIn;
@@ -245,8 +245,8 @@ namespace EAS_Decoder {
 						}
 					}
 
-					Array.Copy(fbuf, global_fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));
-					global_fbuf_cnt = overlap;
+					Array.Copy(fbuf, fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));
+					fbuf_cnt = overlap;
 				}
 				bytesReadIn += bytesToRead;
 			}
