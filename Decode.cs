@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace EAS_Decoder {
 	static class Decode {
@@ -150,13 +151,25 @@ namespace EAS_Decoder {
 				}
 			}
 			Console.WriteLine();
-			int julianDate = int.Parse(message[^17..^14]);
-			string issuedDate = new DateTime(DateTime.Now.Year, 1, 1).AddDays(julianDate - 1).ToShortDateString();
-			string issuedTime = message[^14..^10];
+			StringBuilder timeInfo = new StringBuilder("on ");
+			if (int.TryParse(message[^17..^14], out int julianDate)) {
+				timeInfo.Append(new DateTime(DateTime.Now.Year, 1, 1).AddDays(julianDate - 1).ToShortDateString());
+			} else {
+				timeInfo.Append(message[^17..^14]);
+			}
+			timeInfo.Append($" at {message[^14..^12]}:{message[^12..^10]} for ");
 			string duration = message[^22..^18];
-			int hours = int.Parse(duration[0..2]);
-			int minutes = int.Parse(duration[2..4]);
-			Console.WriteLine($"on {issuedDate} at {issuedTime[0..2]}:{issuedTime[2..4]} for {hours} hour{(hours != 1 ? "s" : "")} and {minutes} minute{(minutes != 1 ? "s" : "")}");
+			if (int.TryParse(duration[0..2], out int hours)) {
+				timeInfo.Append($"{hours} hour{(hours != 1 ? "s" : "")} and ");
+			} else {
+				timeInfo.Append($"{duration[0..2]} hour(s) and ");
+			}
+			if (int.TryParse(duration[2..4], out int minutes)) {
+				timeInfo.Append($"{minutes} minute{(minutes != 1 ? "s" : "")}");
+			} else {
+				timeInfo.Append($"{duration[2..4]} minute(s)");
+			}
+			Console.WriteLine(timeInfo.ToString());
 
 			if (Program.livestream) {
 				Console.WriteLine("Please listen to the audio for an accurate expiration time");
