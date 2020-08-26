@@ -67,7 +67,6 @@ namespace EAS_Decoder {
 		}
 
 		static void ConvertRAWToMP3(string filename) {
-			Console.WriteLine($"Alert saved to {filename}.mp3\n");
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = "cmd",
 				Arguments = $"/C \"sox -r 22050 -e signed -b 16 -t raw \"{filename}.raw\" -t mp3 \"{filename}.mp3\"\"",
@@ -85,6 +84,7 @@ namespace EAS_Decoder {
 				}
 				soxProcess.WaitForExit();
 			}
+			Console.WriteLine($"Alert saved to {filename}.mp3\n");
 		}
 
 		static string AddLeadingZero(int value) {
@@ -183,10 +183,17 @@ namespace EAS_Decoder {
 						}
 						if (record && easRecord == null) {
 							Console.WriteLine("Recording EAS alert");
-							DateTime recordingStarted = fileCreated.AddSeconds(info.Item2 / samplerate);
+							DateTime recordingStarted = DateTime.Now;
 							string month = $"{AddLeadingZero(recordingStarted.Month)}{months[recordingStarted.Month - 1]}";
 							string time = $"{AddLeadingZero(recordingStarted.Hour)}{AddLeadingZero(recordingStarted.Minute)}{AddLeadingZero(recordingStarted.Second)}";
 							fileName = $"{recordingStarted.Year}_{month}_{recordingStarted.Day} - {time}";
+
+							int idx = 1;
+							while (File.Exists($"{fileName} ({idx}).raw")) {
+								idx++;
+							}
+							fileName += $" ({idx})";
+
 							easRecord = new FileStream($"{fileName}.raw", FileMode.OpenOrCreate);
 							while (!bufferBefore.IsEmpty) {
 								byte[] b = new byte[1];
