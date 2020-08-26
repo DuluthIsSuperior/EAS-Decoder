@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Text.RegularExpressions;
 
 namespace EAS_Decoder {
 	class Program {
@@ -64,6 +65,50 @@ namespace EAS_Decoder {
 			}
 		}
 
+		static void GetSAMECodesFromInternet() {
+			Console.Write("Downloading SAME Codes... ");
+			JObject SAMECodes = new JObject();
+			string URL = "https://www.weather.gov/source/nwr/SameCode.txt";
+			HttpWebRequest request = (HttpWebRequest) WebRequest.Create(URL);
+			request.Headers.Add(HttpRequestHeader.UserAgent, "blah");
+			HttpWebResponse response;
+			try {
+				using (response = (HttpWebResponse) request.GetResponse()) {
+					using (StreamReader stream = new StreamReader(response.GetResponseStream())) {
+						while (!stream.EndOfStream) {
+							string line = stream.ReadLine();
+							string SAMECode = line[0..6];
+							string location = line[7..];
+							SAMECodes[SAMECode] = location;
+						}
+					}
+				}
+
+				URL = "https://www.weather.gov/source/gis/Shapefiles/WSOM/marnwr05de17.txt";    // consult https://www.weather.gov/marine/wxradio if a different URL is needed
+				request = (HttpWebRequest) WebRequest.Create(URL);
+				request.Headers.Add(HttpRequestHeader.UserAgent, "blah");
+				using (response = (HttpWebResponse) request.GetResponse()) {
+					using (StreamReader stream = new StreamReader(response.GetResponseStream())) {
+						while (!stream.EndOfStream) {
+							string[] line = stream.ReadLine().Split('|');
+							string sameCode = $"0{line[1]}";
+							string zoneName = line[2];
+							if (zoneName.Contains("Synopsis")) {
+								continue;
+							}
+							SAMECodes[sameCode] = $"{zoneName}, {line[0]}";
+						}
+					}
+				}
+
+				File.WriteAllText("SAMECodes.json", SAMECodes.ToString());
+			} catch (WebException e) {
+				response = (HttpWebResponse) e.Response;
+				Console.WriteLine($"Could not update SAME county codes - a {response.StatusCode} error was returned accessing {URL}");
+			}
+			Console.WriteLine("Done");
+		}
+
 		static void Main(string[] args) {
 			string inputFileDirectory = null;
 			string inputFileType = "raw";
@@ -114,29 +159,7 @@ namespace EAS_Decoder {
 						Console.WriteLine($"info: Successfully pinged {inputFileDirectory}");
 					}
 				} else if (args[i] == "-u" || args[i] == "--update") {
-					Console.Write("Downloading SAME Codes... ");
-					JObject SAMECodes = new JObject();
-					string URL = "https://www.weather.gov/source/nwr/SameCode.txt";
-					HttpWebRequest request = (HttpWebRequest) WebRequest.Create(URL);
-					request.Headers.Add(HttpRequestHeader.UserAgent, "blah");
-					HttpWebResponse response;
-					try {
-						using (response = (HttpWebResponse) request.GetResponse()) {
-							using (StreamReader stream = new StreamReader(response.GetResponseStream())) {
-								while (!stream.EndOfStream) {
-									string line = stream.ReadLine();
-									string SAMECode = line[0..6];
-									string location = line[7..];
-									SAMECodes[SAMECode] = location;
-								}
-							}
-						}
-						File.WriteAllText("SAMECodes.json", SAMECodes.ToString());
-					} catch (WebException e) {
-						response = (HttpWebResponse) e.Response;
-						Console.WriteLine($"Could not update SAME county codes - a {response.StatusCode} error was returned accessing {URL}");
-					}
-					Console.WriteLine("Done");
+					GetSAMECodesFromInternet();
 				} else if (args[i] == "-t" || args[i] == "--type") {
 					i++;
 					inputFileType = args[i];

@@ -2,7 +2,7 @@
   "profiles": {
     "EAS Decoder": {
       "commandName": "Project",
-      "commandLineArgs": "-i https://radio.weatherusa.net/NWR/KHB40.mp3 -t mp3 -r"
+      "commandLineArgs": "-i https://radio.weatherusa.net/NWR/KHB40.mp3 -t mp3"
     }
   }
 }
