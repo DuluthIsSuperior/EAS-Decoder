@@ -30,6 +30,7 @@
 
 using System;
 using System.Reflection.Emit;
+using System.Security.Cryptography;
 
 namespace EAS_Decoder {
 
@@ -137,15 +138,17 @@ namespace EAS_Decoder {
 					}
 
 					string easMessage = "";
-					foreach (char c in s.eas.msg_buf) {
+					for (int i = 0; i < s.eas.msg_buf.Length; i++) {
+						char c = s.eas.msg_buf[i];
 						if (c == 0) {
 							break;
 						}
 						easMessage += c;
+						s.eas.msg_buf[i] = '\0';
 					}
-
 					s.message = $"{HEADER_BEGIN}{easMessage}";
 					Console.WriteLine($"EAS: {s.message}");
+					s.lastHeaderReceived = DateTime.Now;
 					s.headerEnd = (uint) idx;
 					s.headerDetected = DateTime.Now;
 				} else if (s.eas.state == EAS_L2_READING_EOM) {
