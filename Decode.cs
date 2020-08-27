@@ -203,13 +203,13 @@ namespace EAS_Decoder {
 						dem_st.eomEnd = 0;
 					}
 
-					if (ProcessManager.samplerate != 0) {
-						if (headerTonesReadIn > 0 && bytesReadIn + bytesToRead - headerLastDetected > ProcessManager.samplerate * 6) {
+					if (ProcessManager.bitRate != 0) {
+						if (headerTonesReadIn > 0 && bytesReadIn + bytesToRead - headerLastDetected > ProcessManager.bitRate * 6) {
 							headerTonesReadIn = 0;
 							Console.WriteLine("Timeout occured waiting for EAS header tones");
 							PrintMessageDetails(dem_st.message);
 						}
-						if (eomTonesReadIn > 0 && bytesReadIn + bytesToRead - eomLastDetected > ProcessManager.samplerate * 5) {
+						if (eomTonesReadIn > 0 && bytesReadIn + bytesToRead - eomLastDetected > ProcessManager.bitRate * 5) {
 							eomTonesReadIn = 0;
 							record = false;
 							Console.WriteLine("Timeout occured waiting for EOM tones");

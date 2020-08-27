@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 
 namespace EAS_Decoder {
 	static class ProcessManager {
 		static string _soxDirectory = null;
-		public static string soxDirectory {
+		public static string SoxDirectory {
 			get {
 				return _soxDirectory;
 			}
@@ -17,7 +16,7 @@ namespace EAS_Decoder {
 			}
 		}
 		static string _ffmpegDirectory = null;
-		public static string ffmpegDirectory {
+		public static string FfmpegDirectory {
 			get {
 				return _ffmpegDirectory;
 			}
@@ -90,8 +89,8 @@ namespace EAS_Decoder {
 			return string.Format("{0:#,###0}", value);
 		}
 
-		public static uint samplerate;
-		static DateTime fileCreated = DateTime.Now;
+		//public static uint samplerate;
+		public static uint bitRate;
 		static FixedSizeQueue<byte> bufferBefore = null;
 		static FileStream easRecord = null;
 		static readonly string[] months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
@@ -197,7 +196,7 @@ namespace EAS_Decoder {
 						} else if (!record && easRecord != null && !needToBuffer) {
 							easRecord.Write(buffer, 0, lastRead);
 							needToBuffer = true;
-							bufferBefore = new FixedSizeQueue<byte>(samplerate * 5);
+							bufferBefore = new FixedSizeQueue<byte>(bitRate * 5);
 						}
 					}
 				} while (lastRead > 0);
@@ -210,9 +209,7 @@ namespace EAS_Decoder {
 			return 0;
 		}
 
-		public static int GetFileInformation(string filepath) {
-			fileCreated = DateTime.Now;
-
+		public static int GetFileInformation(string filepath, bool record) {
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = "cmd",
 				Arguments = $"/C \"sox --i {filepath}\"",
@@ -228,8 +225,29 @@ namespace EAS_Decoder {
 			using (Process soxProcess = Process.Start(startInfo)) {
 				while (!soxProcess.StandardOutput.EndOfStream) {
 					string[] line = soxProcess.StandardOutput.ReadLine().Split(' ');
-					if (line[0] == "Sample" && line[1] == "Rate") {
-						uint.TryParse(line[^1], out samplerate);
+					if (line[0] == "Bit" && line[1] == "Rate") {
+						string bitRateStr = line[^1];
+						decimal br = -1M;
+						decimal.TryParse(bitRateStr[0..^1], out br);
+						if (br != -1M) {
+							Console.WriteLine(br);
+							char multiplier = bitRateStr[^1].ToString().ToLower()[0];
+							switch (multiplier) {
+								case 'k':
+									br *=    1000M;
+									break;
+								case 'm':
+									br *= 1000000M;
+									break;
+								case 'g':
+									br *= 1000000000M;
+									break;
+								default:
+									Console.WriteLine($"Unknown multiplier: {multiplier}. Program may not function correctly.");
+									break;
+							}
+							bitRate = decimal.ToUInt32(br);
+						}
 					}
 				}
 
@@ -241,12 +259,14 @@ namespace EAS_Decoder {
 				return didNotLoad;
 			}
 
-			if (samplerate == 0) {
-				Console.WriteLine("Could not read sample rate of your input file from Sox");
+			if (bitRate == 0) {
+				Console.WriteLine("Could not read the bit rate of your input file from Sox");
 				return -3;
 			}
 
-			bufferBefore = new FixedSizeQueue<byte>(samplerate * 5);
+			if (record) {
+				bufferBefore = new FixedSizeQueue<byte>(bitRate * 5);
+			}
 			return 0;
 		}
 	}
