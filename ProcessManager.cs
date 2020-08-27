@@ -203,8 +203,8 @@ namespace EAS_Decoder {
 								if (bufferBefore.TryDequeue(out b[0])) {
 									easRecord.Write(b);
 								}
-								needToBuffer = false;
 							}
+							needToBuffer = false;
 						} else if (record && easRecord != null) {
 							if (needToBuffer) {
 								while (!bufferBefore.IsEmpty) {
@@ -263,6 +263,10 @@ namespace EAS_Decoder {
 								case 'k':
 									br *= 1000M;
 									break;
+								case 'M':
+									br *= 1000000M;
+									br /= 8;
+									break;
 								default:
 									Console.WriteLine($"Unknown multiplier {multiplier}. Program may not function correctly.");
 									break;
@@ -285,6 +289,7 @@ namespace EAS_Decoder {
 				//return -3;
 				//bitrate = 22050;
 			}
+			//bitrate = 0;
 
 			//bufferBefore = new FixedSizeQueue<byte>(samplerate * 5);
 			if (record) {

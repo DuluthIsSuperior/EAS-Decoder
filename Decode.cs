@@ -122,16 +122,7 @@ namespace EAS_Decoder {
 
 		static bool header = false;
 		static bool eom = false;
-		static long _timeout;
-		static long timeout {
-			get {
-				return _timeout;
-			}
-			set {
-				Console.WriteLine(value);
-				_timeout = value;
-			}
-		}
+		static long timeout;
 		public static Tuple<bool, uint, uint> DecodeEAS(byte[] raw, int i) {
 			uint overlap = (uint) DemodEAS.overlap;
 			uint startByte = 0;
@@ -185,7 +176,6 @@ namespace EAS_Decoder {
 						eom = true;
 					}
 					if (dem_st.eomEnd != 0) {
-						//eomLastDetected = dem_st.eomEnd + (uint) bytesReadIn;
 						dem_st.eomEnd += (uint) bytesReadIn;
 						eomLastDetected = dem_st.eomEnd;
 						eomTonesReadIn++;
@@ -214,22 +204,22 @@ namespace EAS_Decoder {
 							Console.WriteLine("Timeout occured waiting for EOM tones");
 							timeout = 0;
 						}
-					} else {
-						if (headerTonesReadIn > 0 && DateTime.Now - dem_st.headerDetected > new TimeSpan(0, 0, 5)) {
-							headerTonesReadIn = 0;
-							Console.WriteLine("Timeout occured waiting for EAS header tones");
-							PrintMessageDetails(dem_st.message);
-							timeout = 0;
-						}
-						if (eomTonesReadIn > 0 && DateTime.Now - dem_st.eomDetected > new TimeSpan(0, 0, 5)) {
-							eomTonesReadIn = 0;
-							record = false;
-							Console.WriteLine("Timeout occured waiting for EOM tones");
-							timeout = 0;
-						}
+				} else {
+					if (headerTonesReadIn > 0 && DateTime.Now - dem_st.headerDetected > new TimeSpan(0, 0, 5)) {
+						headerTonesReadIn = 0;
+						Console.WriteLine("Timeout occured waiting for EAS header tones");
+						PrintMessageDetails(dem_st.message);
+						timeout = 0;
 					}
+					if (eomTonesReadIn > 0 && DateTime.Now - dem_st.eomDetected > new TimeSpan(0, 0, 5)) {
+						eomTonesReadIn = 0;
+						record = false;
+						Console.WriteLine("Timeout occured waiting for EOM tones");
+						timeout = 0;
+					}
+				}
 
-					Array.Copy(fbuf, global_fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));
+				Array.Copy(fbuf, global_fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));
 					global_fbuf_cnt = overlap;
 				}
 				bytesReadIn += bytesToRead;
