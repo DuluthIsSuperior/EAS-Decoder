@@ -37,7 +37,7 @@ namespace EAS_Decoder {
 		static bool record = false;
 
 		static void PrintMessageDetails(string message) {
-			string issuerCode = message[5..8];
+			string issuerCode = message.Length >= 8 ? message[5..8] : "???";
 			string issuer;
 			switch (issuerCode) {
 				case "PEP":
@@ -55,19 +55,22 @@ namespace EAS_Decoder {
 				case "EAN":
 					issuer = "Emergency Action Notification Network";
 					break;
+				case "???":
+					issuer = "Incomplete Header";
+					break;
 				default:
 					issuer = "An Unknown Source";
 					break;
 			}
 
-			string eventCode = message[9..12];
+			string eventCode = message.Length >= 12 ? message[9..12] : "???";
 			//string eventName = GetEventName(eventCode, out bool urgentAlert, out bool nationalAlert);
 			string eventName = eventCode;
 
 			//Console.WriteLine($"\n{(nationalAlert ? "NATIONAL ALERT" : "EMERGENCY ALERT SYSTEM")}\n\n" +
 			Console.WriteLine("\nEMERGENCY ALERT SYSTEM\n\n" +
 				$"{issuer} has issued a {eventName} for");
-			string[] SAMECountyCodes = message[13..^23].Split('-');
+			string[] SAMECountyCodes = message.Length >= 13 + 23 ? message[13..^23].Split('-') : new string[0];
 			List<string> unknownCounty = new List<string>();
 			for (int i = 0; i < SAMECountyCodes.Length; i++) {
 				string countyCode = SAMECountyCodes[i];
@@ -82,22 +85,26 @@ namespace EAS_Decoder {
 			}
 			Console.WriteLine();
 			StringBuilder timeInfo = new StringBuilder("on ");
-			if (int.TryParse(message[^17..^14], out int julianDate)) {
-				timeInfo.Append(new DateTime(DateTime.Now.Year, 1, 1).AddDays(julianDate - 1).ToShortDateString());
-			} else {
-				timeInfo.Append(message[^17..^14]);
-			}
-			timeInfo.Append($" at {message[^14..^12]}:{message[^12..^10]} UTC for ");
-			string duration = message[^22..^18];
-			if (int.TryParse(duration[0..2], out int hours)) {
-				timeInfo.Append($"{hours} hour{(hours != 1 ? "s" : "")} and ");
-			} else {
-				timeInfo.Append($"{duration[0..2]} hour(s) and ");
-			}
-			if (int.TryParse(duration[2..4], out int minutes)) {
-				timeInfo.Append($"{minutes} minute{(minutes != 1 ? "s" : "")}");
-			} else {
-				timeInfo.Append($"{duration[2..4]} minute(s)");
+			try {
+				if (int.TryParse(message[^17..^14], out int julianDate)) {
+					timeInfo.Append(new DateTime(DateTime.Now.Year, 1, 1).AddDays(julianDate - 1).ToShortDateString());
+				} else {
+					timeInfo.Append(message[^17..^14]);
+				}
+				timeInfo.Append($" at {message[^14..^12]}:{message[^12..^10]} UTC for ");
+				string duration = message[^22..^18];
+				if (int.TryParse(duration[0..2], out int hours)) {
+					timeInfo.Append($"{hours} hour{(hours != 1 ? "s" : "")} and ");
+				} else {
+					timeInfo.Append($"{duration[0..2]} hour(s) and ");
+				}
+				if (int.TryParse(duration[2..4], out int minutes)) {
+					timeInfo.Append($"{minutes} minute{(minutes != 1 ? "s" : "")}");
+				} else {
+					timeInfo.Append($"{duration[2..4]} minute(s)");
+				}
+			} catch (ArgumentOutOfRangeException) {
+
 			}
 			Console.WriteLine(timeInfo.ToString());
 
