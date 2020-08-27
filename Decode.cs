@@ -226,6 +226,17 @@ namespace EAS_Decoder {
 							record = false;
 							Console.WriteLine("Timeout occured waiting for EOM tones");
 						}
+					} else {
+						if (headerTonesReadIn > 0 && DateTime.Now - dem_st.lastHeaderReceived > new TimeSpan(0, 0, 15)) {
+							headerTonesReadIn = 0;
+							Console.WriteLine("Timeout occured waiting for EAS header tones");
+							PrintMessageDetails(dem_st.message);
+						}
+						if (eomTonesReadIn > 0 && DateTime.Now - dem_st.lastEomReceived > new TimeSpan(0, 0, 15)) {
+							eomTonesReadIn = 0;
+							record = false;
+							Console.WriteLine("Timeout occured waiting for EOM tones");
+						}
 					}
 
 					Array.Copy(fbuf, global_fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));

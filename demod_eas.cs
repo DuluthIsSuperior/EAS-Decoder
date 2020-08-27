@@ -153,6 +153,7 @@ namespace EAS_Decoder {
 				} else if (s.eas.state == EAS_L2_READING_EOM) {
 					Console.WriteLine($"EAS: {EOM}");
 					s.eomEnd = (uint) idx;
+					s.lastEomReceived = DateTime.Now;
 				}
 
 				s.eas.state = EAS_L2_IDLE;
@@ -279,6 +280,7 @@ namespace EAS_Decoder {
 			public uint eomStart;
 			public uint eomEnd;
 			public DateTime lastHeaderReceived;
+			public DateTime lastEomReceived;
 			public string message;
 		}
 	}
