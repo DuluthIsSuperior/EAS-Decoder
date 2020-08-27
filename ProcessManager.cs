@@ -2,28 +2,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
 
 namespace EAS_Decoder {
-	public class FixedSizeQueue<T> : ConcurrentQueue<T> {
-		private readonly object syncObject = new object();
-
-		public uint Size { get; private set; }
-
-		public FixedSizeQueue(uint size) {
-			Size = size;
-		}
-
-		public new void Enqueue(T obj) {
-			base.Enqueue(obj);
-			lock (syncObject) {
-				while (base.Count > Size) {
-					T outObj;
-					base.TryDequeue(out outObj);
-				}
-			}
-		}
-	}
 	static class ProcessManager {
 		static string _soxDirectory = null;
 		public static string soxDirectory {

@@ -2,7 +2,7 @@
   "profiles": {
     "EAS Decoder": {
       "commandName": "Project",
-      "commandLineArgs": "-i workson\\long.wav -t wav"
+      "commandLineArgs": "-i workson\\2020_08Aug_23-142050.mp3 -t mp3"
     }
   }
 }

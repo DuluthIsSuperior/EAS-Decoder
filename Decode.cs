@@ -204,7 +204,7 @@ namespace EAS_Decoder {
 					}
 
 					if (ProcessManager.samplerate != 0) {
-						if (headerTonesReadIn > 0 && bytesReadIn + bytesToRead - headerLastDetected > ProcessManager.samplerate * 5) {
+						if (headerTonesReadIn > 0 && bytesReadIn + bytesToRead - headerLastDetected > ProcessManager.samplerate * 6) {
 							headerTonesReadIn = 0;
 							Console.WriteLine("Timeout occured waiting for EAS header tones");
 							PrintMessageDetails(dem_st.message);

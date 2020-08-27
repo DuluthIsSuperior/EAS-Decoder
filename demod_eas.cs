@@ -100,7 +100,7 @@ namespace EAS_Decoder {
 		static bool IsEqualUpToN(char[] s1, string s2, uint n) {
 			return string.Compare(string.Join("", s1), 0, s2, 0, (int) n) == 0;
 		}
-		static int i = 0;
+
 		static DemodState EASFrame(DemodState s, char data, int idx) {
 			if (data != 0) {
 				if (s.eas.state == EAS_L2_IDLE) {
