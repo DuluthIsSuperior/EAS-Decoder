@@ -57,16 +57,11 @@ namespace EAS_Decoder {
 		}
 
 		static void PrintMessageDetails(string message) {
-			bool urgentIssuer = false;
-
-			//Console.WriteLine(string.Join(", ", issuerReceived));
-
-			string issuerCode = message[5..8];
+			string issuerCode = message.Length >= 8 ? message[5..8] : "???";
 			string issuer;
 			switch (issuerCode) {
 				case "PEP":
 					issuer = "A Primary Entry Point System";
-					urgentIssuer = true;
 					break;
 				case "CIV":
 					issuer = "Civil Authorities";
@@ -79,24 +74,28 @@ namespace EAS_Decoder {
 					break;
 				case "EAN":
 					issuer = "Emergency Action Notification Network";
-					urgentIssuer = true;
+					break;
+				case "???":
+					issuer = "Incomplete Header";
 					break;
 				default:
 					issuer = "An Unknown Source";
 					break;
 			}
 
-			string eventCode = message[9..12];
-			string eventName = GetEventName(eventCode, out bool urgentAlert, out bool nationalAlert);
+			string eventCode = message.Length >= 12 ? message[9..12] : "???";
+			//string eventName = GetEventName(eventCode, out bool urgentAlert, out bool nationalAlert);
+			string eventName = eventCode;
 
-			Console.WriteLine($"\n{(nationalAlert ? "NATIONAL ALERT" : "EMERGENCY ALERT SYSTEM")}\n\n" +
+			//Console.WriteLine($"\n{(nationalAlert ? "NATIONAL ALERT" : "EMERGENCY ALERT SYSTEM")}\n\n" +
+			Console.WriteLine("\nEMERGENCY ALERT SYSTEM\n\n" +
 				$"{issuer} has issued a {eventName} for");
-			string[] SAMECountyCodes = message[13..^23].Split('-');
+			string[] SAMECountyCodes = message.Length >= 13 + 23 ? message[13..^23].Split('-') : new string[0];
 			List<string> unknownCounty = new List<string>();
 			for (int i = 0; i < SAMECountyCodes.Length; i++) {
 				string countyCode = SAMECountyCodes[i];
-				if (Program.countyCodes.ContainsKey(countyCode)) {
-					Console.Write(Program.countyCodes[countyCode]);
+				if (Program.CountyCodes.ContainsKey(countyCode)) {
+					Console.Write(Program.CountyCodes[countyCode]);
 					if (i != SAMECountyCodes.Length - 1) {
 						Console.Write(" - ");
 					}
@@ -106,31 +105,29 @@ namespace EAS_Decoder {
 			}
 			Console.WriteLine();
 			StringBuilder timeInfo = new StringBuilder("on ");
-			if (int.TryParse(message[^17..^14], out int julianDate)) {
-				timeInfo.Append(new DateTime(DateTime.Now.Year, 1, 1).AddDays(julianDate - 1).ToShortDateString());
-			} else {
-				timeInfo.Append(message[^17..^14]);
-			}
-			timeInfo.Append($" at {message[^14..^12]}:{message[^12..^10]} for ");
-			string duration = message[^22..^18];
-			if (int.TryParse(duration[0..2], out int hours)) {
-				timeInfo.Append($"{hours} hour{(hours != 1 ? "s" : "")} and ");
-			} else {
-				timeInfo.Append($"{duration[0..2]} hour(s) and ");
-			}
-			if (int.TryParse(duration[2..4], out int minutes)) {
-				timeInfo.Append($"{minutes} minute{(minutes != 1 ? "s" : "")}");
-			} else {
-				timeInfo.Append($"{duration[2..4]} minute(s)");
+			try {
+				if (int.TryParse(message[^17..^14], out int julianDate)) {
+					timeInfo.Append(new DateTime(DateTime.Now.Year, 1, 1).AddDays(julianDate - 1).ToShortDateString());
+				} else {
+					timeInfo.Append(message[^17..^14]);
+				}
+				timeInfo.Append($" at {message[^14..^12]}:{message[^12..^10]} UTC for ");
+				string duration = message[^22..^18];
+				if (int.TryParse(duration[0..2], out int hours)) {
+					timeInfo.Append($"{hours} hour{(hours != 1 ? "s" : "")} and ");
+				} else {
+					timeInfo.Append($"{duration[0..2]} hour(s) and ");
+				}
+				if (int.TryParse(duration[2..4], out int minutes)) {
+					timeInfo.Append($"{minutes} minute{(minutes != 1 ? "s" : "")}");
+				} else {
+					timeInfo.Append($"{duration[2..4]} minute(s)");
+				}
+			} catch (ArgumentOutOfRangeException) {
+
 			}
 			Console.WriteLine(timeInfo.ToString());
 
-			if (Program.livestream) {
-				Console.WriteLine("Please listen to the audio for an accurate expiration time");
-				if (urgentIssuer || urgentAlert || nationalAlert) {
-					Console.WriteLine("\nURGENT!");
-				}
-			}
 			Console.WriteLine();
 			if (unknownCounty.Count > 0) {
 				Console.WriteLine($"Unknown county code{(unknownCounty.Count != 1 ? "s" : "")} found");
@@ -143,14 +140,9 @@ namespace EAS_Decoder {
 			//issuerReceived = new string[3];
 		}
 
-		static uint CalculateTimeout(uint start, uint end) {
-			return (end - start) * 2 + (ProcessManager.bitRate * 8);	// length of last header * 2 + 1 second
-		}
-
-		static string[] issuerReceived = new string[3];
 		static bool header = false;
 		static bool eom = false;
-		static uint timeout;
+		static long timeout;
 		public static Tuple<bool, uint, uint> DecodeEAS(byte[] raw, int i) {
 			uint overlap = (uint) DemodEAS.overlap;
 			uint startByte = 0;
@@ -188,11 +180,12 @@ namespace EAS_Decoder {
 					if (dem_st.headerEnd != 0) {
 						dem_st.headerEnd += (uint) bytesReadIn;
 						headerLastDetected = dem_st.headerEnd;
-						timeout = CalculateTimeout(dem_st.headerEnd, dem_st.headerStart);
 						if (++headerTonesReadIn == 3) {
 							headerTonesReadIn = 0;
 							PrintMessageDetails(dem_st.message);
+							timeout = 0;
 						}
+						timeout = dem_st.headerEnd - dem_st.headerStart;
 						dem_st.headerStart = 0;
 						dem_st.headerEnd = 0;
 						header = false;
@@ -202,44 +195,50 @@ namespace EAS_Decoder {
 						eom = true;
 					}
 					if (dem_st.eomEnd != 0) {
-						eomLastDetected = dem_st.eomEnd + (uint) bytesReadIn;
-						timeout = CalculateTimeout(dem_st.eomEnd, dem_st.eomStart);
+						dem_st.eomEnd += (uint) bytesReadIn;
+						eomLastDetected = dem_st.eomEnd;
 						eomTonesReadIn++;
+						timeout = (dem_st.eomEnd - dem_st.eomStart);
 						if (eomTonesReadIn == 3) {
 							eomTonesReadIn = 0;
 							record = false;
 							endByte = eomLastDetected;
+							timeout = 0;
 						}
 						dem_st.eomStart = 0;
 						dem_st.eomEnd = 0;
 						eom = false;
 					}
-
-					if (ProcessManager.bitRate != 0) {
-						if (headerTonesReadIn > 0 && bytesReadIn - headerLastDetected > timeout) {
+          
+					if (ProcessManager.bitrate != 0) {
+						if (headerTonesReadIn > 0 && bytesReadIn - headerLastDetected > timeout * 3 + (ProcessManager.bitrate / 8)) {
 							headerTonesReadIn = 0;
 							Console.WriteLine("Timeout occured waiting for EAS header tones");
 							PrintMessageDetails(dem_st.message);
+							timeout = 0;
 						}
-						if (eomTonesReadIn > 0 && bytesReadIn - eomLastDetected > timeout) {
+						if (eomTonesReadIn > 0 && bytesReadIn - eomLastDetected > timeout * 300 + (ProcessManager.bitrate / 8)) {
 							eomTonesReadIn = 0;
 							record = false;
 							Console.WriteLine("Timeout occured waiting for EOM tones");
+							timeout = 0;
 						}
-					} else {
-						if (headerTonesReadIn > 0 && DateTime.Now - dem_st.lastHeaderReceived > new TimeSpan(0, 0, 15)) {
-							headerTonesReadIn = 0;
-							Console.WriteLine("Timeout occured waiting for EAS header tones");
-							PrintMessageDetails(dem_st.message);
-						}
-						if (eomTonesReadIn > 0 && DateTime.Now - dem_st.lastEomReceived > new TimeSpan(0, 0, 15)) {
-							eomTonesReadIn = 0;
-							record = false;
-							Console.WriteLine("Timeout occured waiting for EOM tones");
-						}
+				} else {
+					if (headerTonesReadIn > 0 && DateTime.Now - dem_st.headerDetected > new TimeSpan(0, 0, 5)) {
+						headerTonesReadIn = 0;
+						Console.WriteLine("Timeout occured waiting for EAS header tones");
+						PrintMessageDetails(dem_st.message);
+						timeout = 0;
 					}
+					if (eomTonesReadIn > 0 && DateTime.Now - dem_st.eomDetected > new TimeSpan(0, 0, 5)) {
+						eomTonesReadIn = 0;
+						record = false;
+						Console.WriteLine("Timeout occured waiting for EOM tones");
+						timeout = 0;
+					}
+				}
 
-					Array.Copy(fbuf, global_fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));
+				Array.Copy(fbuf, global_fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));
 					global_fbuf_cnt = overlap;
 				}
 				bytesReadIn += bytesToRead;

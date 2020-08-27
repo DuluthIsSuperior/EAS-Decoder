@@ -150,10 +150,11 @@ namespace EAS_Decoder {
 					Console.WriteLine($"EAS: {s.message}");
 					s.lastHeaderReceived = DateTime.Now;
 					s.headerEnd = (uint) idx;
+					s.headerDetected = DateTime.Now;
 				} else if (s.eas.state == EAS_L2_READING_EOM) {
 					Console.WriteLine($"EAS: {EOM}");
 					s.eomEnd = (uint) idx;
-					s.lastEomReceived = DateTime.Now;
+					s.eomDetected = DateTime.Now;
 				}
 
 				s.eas.state = EAS_L2_IDLE;
@@ -277,10 +278,10 @@ namespace EAS_Decoder {
 			public State1 eas_2;
 			public uint headerStart;
 			public uint headerEnd;
+			public DateTime headerDetected;
 			public uint eomStart;
 			public uint eomEnd;
-			public DateTime lastHeaderReceived;
-			public DateTime lastEomReceived;
+			public DateTime eomDetected;
 			public string message;
 		}
 	}

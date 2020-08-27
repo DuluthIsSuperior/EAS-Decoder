@@ -89,8 +89,8 @@ namespace EAS_Decoder {
 			return string.Format("{0:#,###0}", value);
 		}
 
-		//public static uint samplerate;
-		public static uint bitRate;
+		public static uint bitrate;
+		static DateTime fileCreated = DateTime.Now;
 		static FixedSizeQueue<byte> bufferBefore = null;
 		static FileStream easRecord = null;
 		static readonly string[] months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
@@ -179,8 +179,8 @@ namespace EAS_Decoder {
 								if (bufferBefore.TryDequeue(out b[0])) {
 									easRecord.Write(b);
 								}
-								needToBuffer = false;
 							}
+							needToBuffer = false;
 						} else if (record && easRecord != null) {
 							if (needToBuffer) {
 								while (!bufferBefore.IsEmpty) {
@@ -210,6 +210,7 @@ namespace EAS_Decoder {
 		}
 
 		public static int GetFileInformation(string filepath, bool record) {
+			fileCreated = DateTime.Now;
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = "cmd",
 				Arguments = $"/C \"sox --i {filepath}\"",
@@ -226,26 +227,22 @@ namespace EAS_Decoder {
 				while (!soxProcess.StandardOutput.EndOfStream) {
 					string[] line = soxProcess.StandardOutput.ReadLine().Split(' ');
 					if (line[0] == "Bit" && line[1] == "Rate") {
-						string bitRateStr = line[^1];
-						decimal br = -1M;
-						decimal.TryParse(bitRateStr[0..^1], out br);
-						if (br != -1M) {
-							char multiplier = bitRateStr[^1].ToString().ToLower()[0];
+						string number = line[^1][0..^1];
+						char multiplier = line[^1][^1];
+						if (decimal.TryParse(number, out decimal br)) {
 							switch (multiplier) {
 								case 'k':
-									br *=    1000M;
+									br *= 1000M;
 									break;
-								case 'm':
+								case 'M':
 									br *= 1000000M;
-									break;
-								case 'g':
-									br *= 1000000000M;
+									br /= 8;
 									break;
 								default:
-									Console.WriteLine($"Unknown multiplier: {multiplier}. Program may not function correctly.");
+									Console.WriteLine($"Unknown multiplier {multiplier}. Program may not function correctly.");
 									break;
 							}
-							bitRate = decimal.ToUInt32(br);
+							bitrate = decimal.ToUInt32(br);
 						}
 					}
 				}
@@ -258,8 +255,14 @@ namespace EAS_Decoder {
 				return didNotLoad;
 			}
 
+			if (bitrate == 0) {
+				//Console.WriteLine("Could not read sample rate of your input file from Sox");
+				//return -3;
+				//bitrate = 22050;
+			}
+
 			if (record) {
-				bufferBefore = new FixedSizeQueue<byte>(bitRate * 5);
+				bufferBefore = new FixedSizeQueue<byte>(bitrate * 5);
 			}
 			return 0;
 		}
