@@ -259,11 +259,6 @@ namespace EAS_Decoder {
 				return didNotLoad;
 			}
 
-			if (bitRate == 0) {
-				Console.WriteLine("Could not read the bit rate of your input file from Sox");
-				return -3;
-			}
-
 			if (record) {
 				bufferBefore = new FixedSizeQueue<byte>(bitRate * 5);
 			}

@@ -59,7 +59,7 @@ namespace EAS_Decoder {
 		static void PrintMessageDetails(string message) {
 			bool urgentIssuer = false;
 
-			Console.WriteLine(string.Join(", ", issuerReceived));
+			//Console.WriteLine(string.Join(", ", issuerReceived));
 
 			string issuerCode = message[5..8];
 			string issuer;
@@ -140,10 +140,11 @@ namespace EAS_Decoder {
 				Console.WriteLine("If audio quality is poor, this maybe an error. If these codes are valid, please run this program with the '-u' flag.\n");
 			}
 
-			issuerReceived = new string[3];
+			//issuerReceived = new string[3];
 		}
 
 		static string[] issuerReceived = new string[3];
+		static bool header = false;
 		public static Tuple<bool, uint, uint> DecodeEAS(byte[] raw, int i) {
 			uint overlap = (uint) DemodEAS.overlap;
 			uint startByte = 0;
@@ -172,21 +173,26 @@ namespace EAS_Decoder {
 				}
 				if (global_fbuf_cnt > overlap) {
 					dem_st = DemodEAS.EASDemod(dem_st, fbuf, (int) (global_fbuf_cnt - overlap));   // process buffer
-					if (dem_st.headerStart != 0) {
+					if (dem_st.headerStart != 0 && !header) {
 						record = true;
 						dem_st.headerStart += (uint) bytesReadIn;
 						startByte = dem_st.headerStart;
+						header = true;
+						Console.WriteLine($"?{dem_st.headerStart}");
+						//headerLastDetected = dem_st.headerStart;
 					}
 					if (dem_st.headerEnd != 0) {
-						headerLastDetected = dem_st.headerEnd + (uint) bytesReadIn;
-						issuerReceived[headerTonesReadIn] = dem_st.message[5..8];
+						//headerLastDetected = dem_st.headerEnd + (uint) bytesReadIn;
+						//Console.WriteLine($"HEADER   END: {headerLastDetected}");
+						//issuerReceived[headerTonesReadIn] = dem_st.message[5..8];
+						Console.WriteLine($"!{dem_st.headerEnd + (uint) bytesReadIn}");
 						if (++headerTonesReadIn == 3) {
 							headerTonesReadIn = 0;
 							PrintMessageDetails(dem_st.message);
 						}
 						dem_st.headerStart = 0;
 						dem_st.headerEnd = 0;
-						
+						header = false;
 					}
 					if (dem_st.eomStart != 0) {
 						dem_st.eomStart += (uint) bytesReadIn;
@@ -204,16 +210,20 @@ namespace EAS_Decoder {
 					}
 
 					if (ProcessManager.bitRate != 0) {
-						if (headerTonesReadIn > 0 && bytesReadIn + bytesToRead - headerLastDetected > ProcessManager.bitRate * 6) {
-							headerTonesReadIn = 0;
-							Console.WriteLine("Timeout occured waiting for EAS header tones");
-							PrintMessageDetails(dem_st.message);
-						}
-						if (eomTonesReadIn > 0 && bytesReadIn + bytesToRead - eomLastDetected > ProcessManager.bitRate * 5) {
-							eomTonesReadIn = 0;
-							record = false;
-							Console.WriteLine("Timeout occured waiting for EOM tones");
-						}
+						uint timeoutPeriod = (ProcessManager.bitRate * 5) / 8;
+
+						
+
+						//if (headerTonesReadIn > 0 && bytesReadIn - headerLastDetected > timeoutPeriod) {
+						//	headerTonesReadIn = 0;
+						//	Console.WriteLine("Timeout occured waiting for EAS header tones");
+						//	PrintMessageDetails(dem_st.message);
+						//}
+						//if (eomTonesReadIn > 0 && bytesReadIn + bytesReadIn - eomLastDetected > timeoutPeriod) {
+						//	eomTonesReadIn = 0;
+						//	record = false;
+						//	Console.WriteLine("Timeout occured waiting for EOM tones");
+						//}
 					}
 
 					Array.Copy(fbuf, global_fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));
