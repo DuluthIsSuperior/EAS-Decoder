@@ -230,17 +230,21 @@ namespace EAS_Decoder {
 						decimal br = -1M;
 						decimal.TryParse(bitRateStr[0..^1], out br);
 						if (br != -1M) {
-							char multiplier = bitRateStr[^1].ToString().ToLower()[0];
+							char multiplier = bitRateStr[^1];
 							switch (multiplier) {
 								case 'k':
 									br *=    1000M;
 									break;
-								case 'm':
+								case 'M':
 									br *= 1000000M;
+									br /= 8;
 									break;
-								case 'g':
-									br *= 1000000000M;
-									break;
+								//case 'm':
+								//	br *= 1000000M;
+								//	break;
+								//case 'g':
+								//	br *= 1000000000M;
+								//	break;
 								default:
 									Console.WriteLine($"Unknown multiplier: {multiplier}. Program may not function correctly.");
 									break;
