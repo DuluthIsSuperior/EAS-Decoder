@@ -121,7 +121,7 @@ namespace EAS_Decoder {
 				soxProcess.EnableRaisingEvents = true;
 				soxProcess.BeginErrorReadLine();
 				soxProcess.ErrorDataReceived += new DataReceivedEventHandler((s, e) => {
-					// needed to flush standard error so that it doesn't cause the process to hang
+					// needed to flush standard error so that it does not make the process to hang
 				});
 
 				FileStream baseStream = (FileStream) soxProcess.StandardOutput.BaseStream;
