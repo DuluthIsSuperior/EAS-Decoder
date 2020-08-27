@@ -1,33 +1,11 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.Serialization;
-using System.Threading;
 
 namespace EAS_Decoder {
-	public class FixedSizeQueue<T> : ConcurrentQueue<T> {
-		private readonly object syncObject = new object();
-
-		public uint Size { get; private set; }
-
-		public FixedSizeQueue(uint size) {
-			Size = size;
-		}
-
-		public new void Enqueue(T obj) {
-			base.Enqueue(obj);
-			lock (syncObject) {
-				while (base.Count > Size) {
-					T outObj;
-					base.TryDequeue(out outObj);
-				}
-			}
-		}
-	}
 	static class ProcessManager {
 		static string _soxDirectory = null;
-		public static string soxDirectory {
+		public static string SoxDirectory {
 			get {
 				return _soxDirectory;
 			}
@@ -38,7 +16,7 @@ namespace EAS_Decoder {
 			}
 		}
 		static string _ffmpegDirectory = null;
-		public static string ffmpegDirectory {
+		public static string FfmpegDirectory {
 			get {
 				return _ffmpegDirectory;
 			}
@@ -68,7 +46,6 @@ namespace EAS_Decoder {
 		}
 
 		static void ConvertRAWToMP3(string filename) {
-			Console.WriteLine($"Alert saved to {filename}.mp3\n");
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = "cmd",
 				Arguments = $"/C \"sox -r 22050 -e signed -b 16 -t raw \"{filename}.raw\" -t mp3 \"{filename}.mp3\"\"",
@@ -86,6 +63,7 @@ namespace EAS_Decoder {
 				}
 				soxProcess.WaitForExit();
 			}
+			Console.WriteLine($"Alert saved to {filename}.mp3\n");
 		}
 
 		static string AddLeadingZero(int value) {
@@ -111,7 +89,6 @@ namespace EAS_Decoder {
 			return string.Format("{0:#,###0}", value);
 		}
 
-		//public static uint samplerate;
 		public static uint bitrate;
 		static DateTime fileCreated = DateTime.Now;
 		static FixedSizeQueue<byte> bufferBefore = null;
@@ -185,7 +162,6 @@ namespace EAS_Decoder {
 						}
 						if (record && easRecord == null) {
 							Console.WriteLine("Recording EAS alert");
-							//DateTime recordingStarted = fileCreated.AddSeconds(info.Item2 / samplerate);
 							DateTime recordingStarted = DateTime.Now;
 							string month = $"{AddLeadingZero(recordingStarted.Month)}{months[recordingStarted.Month - 1]}";
 							string time = $"{AddLeadingZero(recordingStarted.Hour)}{AddLeadingZero(recordingStarted.Minute)}{AddLeadingZero(recordingStarted.Second)}";
@@ -220,8 +196,7 @@ namespace EAS_Decoder {
 						} else if (!record && easRecord != null && !needToBuffer) {
 							easRecord.Write(buffer, 0, lastRead);
 							needToBuffer = true;
-							//bufferBefore = new FixedSizeQueue<byte>(samplerate * 5);
-							bufferBefore = new FixedSizeQueue<byte>(bitrate * 5);
+							bufferBefore = new FixedSizeQueue<byte>(bitRate * 5);
 						}
 					}
 				} while (lastRead > 0);
@@ -236,7 +211,6 @@ namespace EAS_Decoder {
 
 		public static int GetFileInformation(string filepath, bool record) {
 			fileCreated = DateTime.Now;
-
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = "cmd",
 				Arguments = $"/C \"sox --i {filepath}\"",
@@ -252,9 +226,6 @@ namespace EAS_Decoder {
 			using (Process soxProcess = Process.Start(startInfo)) {
 				while (!soxProcess.StandardOutput.EndOfStream) {
 					string[] line = soxProcess.StandardOutput.ReadLine().Split(' ');
-					//if (line[0] == "Sample" && line[1] == "Rate") {
-					//	uint.TryParse(line[^1], out samplerate);
-					//}
 					if (line[0] == "Bit" && line[1] == "Rate") {
 						string number = line[^1][0..^1];
 						char multiplier = line[^1][^1];
@@ -289,9 +260,7 @@ namespace EAS_Decoder {
 				//return -3;
 				//bitrate = 22050;
 			}
-			//bitrate = 0;
 
-			//bufferBefore = new FixedSizeQueue<byte>(samplerate * 5);
 			if (record) {
 				bufferBefore = new FixedSizeQueue<byte>(bitrate * 5);
 			}
