@@ -87,7 +87,7 @@ namespace EAS_Decoder {
 			} else {
 				timeInfo.Append(message[^17..^14]);
 			}
-			timeInfo.Append($" at {message[^14..^12]}:{message[^12..^10]} for ");
+			timeInfo.Append($" at {message[^14..^12]}:{message[^12..^10]} UTC for ");
 			string duration = message[^22..^18];
 			if (int.TryParse(duration[0..2], out int hours)) {
 				timeInfo.Append($"{hours} hour{(hours != 1 ? "s" : "")} and ");
