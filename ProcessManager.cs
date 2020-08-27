@@ -230,7 +230,6 @@ namespace EAS_Decoder {
 						decimal br = -1M;
 						decimal.TryParse(bitRateStr[0..^1], out br);
 						if (br != -1M) {
-							Console.WriteLine(br);
 							char multiplier = bitRateStr[^1].ToString().ToLower()[0];
 							switch (multiplier) {
 								case 'k':
