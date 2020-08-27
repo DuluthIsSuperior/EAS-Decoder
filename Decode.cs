@@ -120,6 +120,18 @@ namespace EAS_Decoder {
 			//issuerReceived = new string[3];
 		}
 
+		static bool header = false;
+		static bool eom = false;
+		static long _timeout;
+		static long timeout {
+			get {
+				return _timeout;
+			}
+			set {
+				Console.WriteLine(value);
+				_timeout = value;
+			}
+		}
 		public static Tuple<bool, uint, uint> DecodeEAS(byte[] raw, int i) {
 			uint overlap = (uint) DemodEAS.overlap;
 			uint startByte = 0;
@@ -148,47 +160,72 @@ namespace EAS_Decoder {
 				}
 				if (global_fbuf_cnt > overlap) {
 					dem_st = DemodEAS.EASDemod(dem_st, fbuf, (int) (global_fbuf_cnt - overlap));   // process buffer
-					if (dem_st.headerStart != 0) {
+					if (dem_st.headerStart != 0 && !header) {
 						record = true;
 						dem_st.headerStart += (uint) bytesReadIn;
 						startByte = dem_st.headerStart;
+						header = true;
 					}
 					if (dem_st.headerEnd != 0) {
-						headerLastDetected = dem_st.headerEnd + (uint) bytesReadIn;
+						//headerLastDetected = dem_st.headerEnd + (uint) bytesReadIn;
+						dem_st.headerEnd += (uint) bytesReadIn;
+						headerLastDetected = dem_st.headerEnd;
 						if (++headerTonesReadIn == 3) {
 							headerTonesReadIn = 0;
 							PrintMessageDetails(dem_st.message);
+							timeout = 0;
 						}
+						timeout = dem_st.headerEnd - dem_st.headerStart;
 						dem_st.headerStart = 0;
 						dem_st.headerEnd = 0;
-						
+						header = false;
 					}
-					if (dem_st.eomStart != 0) {
+					if (dem_st.eomStart != 0 && !eom) {
 						dem_st.eomStart += (uint) bytesReadIn;
+						eom = true;
 					}
 					if (dem_st.eomEnd != 0) {
-						eomLastDetected = dem_st.eomEnd + (uint) bytesReadIn;
+						//eomLastDetected = dem_st.eomEnd + (uint) bytesReadIn;
+						dem_st.eomEnd += (uint) bytesReadIn;
+						eomLastDetected = dem_st.eomEnd;
 						eomTonesReadIn++;
+						timeout = (dem_st.eomEnd - dem_st.eomStart);
 						if (eomTonesReadIn == 3) {
 							eomTonesReadIn = 0;
 							record = false;
 							endByte = eomLastDetected;
+							timeout = 0;
 						}
 						dem_st.eomStart = 0;
 						dem_st.eomEnd = 0;
+						eom = false;
 					}
 
-					if (ProcessManager.samplerate != 0) {
-						if (headerTonesReadIn > 0 && bytesReadIn + bytesToRead - headerLastDetected > ProcessManager.samplerate * 5) {
-							headerTonesReadIn = 0;
-							Console.WriteLine("Timeout occured waiting for EAS header tones");
-							PrintMessageDetails(dem_st.message);
-						}
-						if (eomTonesReadIn > 0 && bytesReadIn + bytesToRead - eomLastDetected > ProcessManager.samplerate * 5) {
-							eomTonesReadIn = 0;
-							record = false;
-							Console.WriteLine("Timeout occured waiting for EOM tones");
-						}
+					//if (ProcessManager.samplerate != 0) {
+					//if (headerTonesReadIn > 0 && bytesReadIn - headerLastDetected > (ProcessManager.bitrate / 8) * 5) {
+					//	headerTonesReadIn = 0;
+					//	Console.WriteLine("Timeout occured waiting for EAS header tones");
+					//	PrintMessageDetails(dem_st.message);
+					//}
+					//if (eomTonesReadIn > 0 && bytesReadIn + bytesToRead - eomLastDetected > (ProcessManager.bitrate) / 8 * 5) {
+					//	eomTonesReadIn = 0;
+					//	record = false;
+					//	Console.WriteLine("Timeout occured waiting for EOM tones");
+					//}
+					//}
+
+					if (headerTonesReadIn > 0 && bytesReadIn - headerLastDetected > timeout * 2 + (ProcessManager.bitrate / 8)) {
+						headerTonesReadIn = 0;
+						Console.WriteLine("Timeout occured waiting for EAS header tones");
+						PrintMessageDetails(dem_st.message);
+						timeout = 0;
+					}
+					if (eomTonesReadIn > 0 && bytesReadIn - eomLastDetected > timeout * 300 + (ProcessManager.bitrate / 8)) {
+						
+						eomTonesReadIn = 0;
+						record = false;
+						Console.WriteLine("Timeout occured waiting for EOM tones");
+						timeout = 0;
 					}
 
 					Array.Copy(fbuf, global_fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));

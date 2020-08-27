@@ -214,10 +214,13 @@ namespace EAS_Decoder {
 				if (inputFileType != "raw") {
 					Console.WriteLine($"info: Monitoring {inputFileDirectory}");
 					int soxExitCode;
-					if (recordOnEAS) {
-						soxExitCode = ProcessManager.GetFileInformation(inputFileDirectory);
-						DidSoxFail(soxExitCode);
-					}
+					//if (recordOnEAS) {
+					//	soxExitCode = ProcessManager.GetFileInformation(inputFileDirectory);
+					//	DidSoxFail(soxExitCode);
+					//}
+
+					soxExitCode = ProcessManager.GetFileInformation(inputFileDirectory, recordOnEAS);
+					DidSoxFail(soxExitCode);
 
 					soxExitCode = ProcessManager.ConvertAndDecode(inputFileDirectory, inputFileType, outputFileDirectory);
 					DidSoxFail(soxExitCode);

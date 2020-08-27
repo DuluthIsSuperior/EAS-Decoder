@@ -2,7 +2,7 @@
   "profiles": {
     "EAS Decoder": {
       "commandName": "Project",
-      "commandLineArgs": "-i workson\\2020_08Aug_23-142841.mp3 -t mp3 -u"
+      "commandLineArgs": "-i https://radio.weatherusa.net/NWR/WXL37.mp3 -t mp3"
     }
   }
 }
