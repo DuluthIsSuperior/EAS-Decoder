@@ -6,28 +6,9 @@ using System.Runtime.Serialization;
 using System.Threading;
 
 namespace EAS_Decoder {
-	public class FixedSizeQueue<T> : ConcurrentQueue<T> {
-		private readonly object syncObject = new object();
-
-		public uint Size { get; private set; }
-
-		public FixedSizeQueue(uint size) {
-			Size = size;
-		}
-
-		public new void Enqueue(T obj) {
-			base.Enqueue(obj);
-			lock (syncObject) {
-				while (base.Count > Size) {
-					T outObj;
-					base.TryDequeue(out outObj);
-				}
-			}
-		}
-	}
 	static class ProcessManager {
 		static string _soxDirectory = null;
-		public static string soxDirectory {
+		public static string SoxDirectory {
 			get {
 				return _soxDirectory;
 			}
@@ -38,7 +19,7 @@ namespace EAS_Decoder {
 			}
 		}
 		static string _ffmpegDirectory = null;
-		public static string ffmpegDirectory {
+		public static string FfmpegDirectory {
 			get {
 				return _ffmpegDirectory;
 			}

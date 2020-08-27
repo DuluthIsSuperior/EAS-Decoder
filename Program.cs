@@ -155,7 +155,7 @@ namespace EAS_Decoder {
 							Console.WriteLine($"Could not open file or URL: {args[i]}");
 							Environment.Exit(4);
 						}
-						livestream = true;
+						Livestream = true;
 						inputFileDirectory = args[i];
 						Console.WriteLine($"info: Successfully pinged {inputFileDirectory}");
 					}

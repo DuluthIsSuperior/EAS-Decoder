@@ -148,7 +148,6 @@ namespace EAS_Decoder {
 					}
 					s.message = $"{HEADER_BEGIN}{easMessage}";
 					Console.WriteLine($"EAS: {s.message}");
-					s.lastHeaderReceived = DateTime.Now;
 					s.headerEnd = (uint) idx;
 					s.headerDetected = DateTime.Now;
 				} else if (s.eas.state == EAS_L2_READING_EOM) {
