@@ -201,20 +201,7 @@ namespace EAS_Decoder {
 						eom = false;
 					}
 
-					//if (ProcessManager.samplerate != 0) {
-					//if (headerTonesReadIn > 0 && bytesReadIn - headerLastDetected > (ProcessManager.bitrate / 8) * 5) {
-					//	headerTonesReadIn = 0;
-					//	Console.WriteLine("Timeout occured waiting for EAS header tones");
-					//	PrintMessageDetails(dem_st.message);
-					//}
-					//if (eomTonesReadIn > 0 && bytesReadIn + bytesToRead - eomLastDetected > (ProcessManager.bitrate) / 8 * 5) {
-					//	eomTonesReadIn = 0;
-					//	record = false;
-					//	Console.WriteLine("Timeout occured waiting for EOM tones");
-					//}
-					//}
-
-					if (headerTonesReadIn > 0 && bytesReadIn - headerLastDetected > timeout * 2 + (ProcessManager.bitrate / 8)) {
+					if (headerTonesReadIn > 0 && bytesReadIn - headerLastDetected > timeout * 3 + (ProcessManager.bitrate / 8)) {
 						headerTonesReadIn = 0;
 						Console.WriteLine("Timeout occured waiting for EAS header tones");
 						PrintMessageDetails(dem_st.message);

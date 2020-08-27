@@ -190,6 +190,13 @@ namespace EAS_Decoder {
 							string month = $"{AddLeadingZero(recordingStarted.Month)}{months[recordingStarted.Month - 1]}";
 							string time = $"{AddLeadingZero(recordingStarted.Hour)}{AddLeadingZero(recordingStarted.Minute)}{AddLeadingZero(recordingStarted.Second)}";
 							fileName = $"{recordingStarted.Year}_{month}_{recordingStarted.Day} - {time}";
+
+							int idx = 1;
+							while (File.Exists($"{fileName} ({idx}).raw")) {
+								idx++;
+							}
+							fileName += $" ({idx})";
+
 							easRecord = new FileStream($"{fileName}.raw", FileMode.OpenOrCreate);
 							while (!bufferBefore.IsEmpty) {
 								byte[] b = new byte[1];
