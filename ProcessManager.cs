@@ -222,7 +222,6 @@ namespace EAS_Decoder {
 				}
 				soxProcess.WaitForExit();
 			}
-			Console.ReadKey();
 			return 0;
 		}
 

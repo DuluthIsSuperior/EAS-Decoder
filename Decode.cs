@@ -17,7 +17,9 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace EAS_Decoder {
 	static class Decode {
@@ -35,7 +37,80 @@ namespace EAS_Decoder {
 		static bool record = false;
 
 		static void PrintMessageDetails(string message) {
-			Console.WriteLine($"\nMESSAGE: {message}\n");
+			string issuerCode = message[5..8];
+			string issuer;
+			switch (issuerCode) {
+				case "PEP":
+					issuer = "A Primary Entry Point System";
+					break;
+				case "CIV":
+					issuer = "Civil Authorities";
+					break;
+				case "WXR":
+					issuer = "The National Weather Service";
+					break;
+				case "EAS":
+					issuer = "An Emergency Alert System Participant";
+					break;
+				case "EAN":
+					issuer = "Emergency Action Notification Network";
+					break;
+				default:
+					issuer = "An Unknown Source";
+					break;
+			}
+
+			string eventCode = message[9..12];
+			//string eventName = GetEventName(eventCode, out bool urgentAlert, out bool nationalAlert);
+			string eventName = eventCode;
+
+			//Console.WriteLine($"\n{(nationalAlert ? "NATIONAL ALERT" : "EMERGENCY ALERT SYSTEM")}\n\n" +
+			Console.WriteLine("\nEMERGENCY ALERT SYSTEM\n\n" +
+				$"{issuer} has issued a {eventName} for");
+			string[] SAMECountyCodes = message[13..^23].Split('-');
+			List<string> unknownCounty = new List<string>();
+			for (int i = 0; i < SAMECountyCodes.Length; i++) {
+				string countyCode = SAMECountyCodes[i];
+				if (Program.CountyCodes.ContainsKey(countyCode)) {
+					Console.Write(Program.CountyCodes[countyCode]);
+					if (i != SAMECountyCodes.Length - 1) {
+						Console.Write(" - ");
+					}
+				} else {
+					unknownCounty.Add(countyCode);
+				}
+			}
+			Console.WriteLine();
+			StringBuilder timeInfo = new StringBuilder("on ");
+			if (int.TryParse(message[^17..^14], out int julianDate)) {
+				timeInfo.Append(new DateTime(DateTime.Now.Year, 1, 1).AddDays(julianDate - 1).ToShortDateString());
+			} else {
+				timeInfo.Append(message[^17..^14]);
+			}
+			timeInfo.Append($" at {message[^14..^12]}:{message[^12..^10]} for ");
+			string duration = message[^22..^18];
+			if (int.TryParse(duration[0..2], out int hours)) {
+				timeInfo.Append($"{hours} hour{(hours != 1 ? "s" : "")} and ");
+			} else {
+				timeInfo.Append($"{duration[0..2]} hour(s) and ");
+			}
+			if (int.TryParse(duration[2..4], out int minutes)) {
+				timeInfo.Append($"{minutes} minute{(minutes != 1 ? "s" : "")}");
+			} else {
+				timeInfo.Append($"{duration[2..4]} minute(s)");
+			}
+			Console.WriteLine(timeInfo.ToString());
+
+			Console.WriteLine();
+			if (unknownCounty.Count > 0) {
+				Console.WriteLine($"Unknown county code{(unknownCounty.Count != 1 ? "s" : "")} found");
+				foreach (string county in unknownCounty) {
+					Console.WriteLine(county);
+				}
+				Console.WriteLine("If audio quality is poor, this maybe an error. If these codes are valid, please run this program with the '-u' flag.\n");
+			}
+
+			//issuerReceived = new string[3];
 		}
 
 		public static Tuple<bool, uint, uint> DecodeEAS(byte[] raw, int i) {
