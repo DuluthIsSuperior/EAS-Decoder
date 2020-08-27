@@ -6,11 +6,11 @@ using System.Text.RegularExpressions;
 
 namespace EAS_Decoder {
 	class Program {
-		public static bool livestream {
+		public static bool Livestream {
 			get;
 			private set;
 		}
-		public static JObject countyCodes {
+		public static JObject CountyCodes {
 			get;
 			private set;
 		}
@@ -25,6 +25,7 @@ namespace EAS_Decoder {
 						"    -r or --record: Saves recordings of EAS alerts that this program reads in using parameters from the input file\n" +
 						"    -u or --update: Attempts to update the local copy of county and event/alert codes\n" +
 						"                    Does not work if the input file is already raw\n" +
+						"    -u or --update: Attempts to update the local copy of county and event/alert codes\n" +
 						"    -h or --help: Displays this help page\n\n" +
 						"For more information on flags bulleted with an asterisk, type in the flag followed by -h or --help\n" +
 						"e.g. More information about -s can be displayed by typing \"EASDecoder -s -h\"");
@@ -197,6 +198,8 @@ namespace EAS_Decoder {
 					string outputPath = $"{args[i]}.{inputFileType}.raw";
 					Console.WriteLine($"Output file will be written to {outputPath}");
 					outputFileDirectory = outputPath;
+				} else if (args[i] == "-u" || args[i] == "--update") {
+					GetSAMECodesFromInternet();
 				} else if (args[i] == "-h" || args[i] == "--help") {
 					DisplayHelp();
 					Environment.Exit(0);
@@ -208,7 +211,7 @@ namespace EAS_Decoder {
 
 			try {
 				string SAMEJson = File.ReadAllText("SAMECodes.json");
-				countyCodes = JObject.Parse(SAMEJson);
+				CountyCodes = JObject.Parse(SAMEJson);
 			} catch (Exception) {
 				Console.WriteLine("There was a problem loading in the database of SAME county codes.\nPlease run this program next time using the '-u' flag.");
 			}
