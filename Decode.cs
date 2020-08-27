@@ -201,18 +201,32 @@ namespace EAS_Decoder {
 						eom = false;
 					}
 
-					if (headerTonesReadIn > 0 && bytesReadIn - headerLastDetected > timeout * 3 + (ProcessManager.bitrate / 8)) {
-						headerTonesReadIn = 0;
-						Console.WriteLine("Timeout occured waiting for EAS header tones");
-						PrintMessageDetails(dem_st.message);
-						timeout = 0;
-					}
-					if (eomTonesReadIn > 0 && bytesReadIn - eomLastDetected > timeout * 300 + (ProcessManager.bitrate / 8)) {
-						
-						eomTonesReadIn = 0;
-						record = false;
-						Console.WriteLine("Timeout occured waiting for EOM tones");
-						timeout = 0;
+					if (ProcessManager.bitrate != 0) {
+						if (headerTonesReadIn > 0 && bytesReadIn - headerLastDetected > timeout * 3 + (ProcessManager.bitrate / 8)) {
+							headerTonesReadIn = 0;
+							Console.WriteLine("Timeout occured waiting for EAS header tones");
+							PrintMessageDetails(dem_st.message);
+							timeout = 0;
+						}
+						if (eomTonesReadIn > 0 && bytesReadIn - eomLastDetected > timeout * 300 + (ProcessManager.bitrate / 8)) {
+							eomTonesReadIn = 0;
+							record = false;
+							Console.WriteLine("Timeout occured waiting for EOM tones");
+							timeout = 0;
+						}
+					} else {
+						if (headerTonesReadIn > 0 && DateTime.Now - dem_st.headerDetected > new TimeSpan(0, 0, 5)) {
+							headerTonesReadIn = 0;
+							Console.WriteLine("Timeout occured waiting for EAS header tones");
+							PrintMessageDetails(dem_st.message);
+							timeout = 0;
+						}
+						if (eomTonesReadIn > 0 && DateTime.Now - dem_st.eomDetected > new TimeSpan(0, 0, 5)) {
+							eomTonesReadIn = 0;
+							record = false;
+							Console.WriteLine("Timeout occured waiting for EOM tones");
+							timeout = 0;
+						}
 					}
 
 					Array.Copy(fbuf, global_fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));

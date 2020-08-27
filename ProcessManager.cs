@@ -283,7 +283,7 @@ namespace EAS_Decoder {
 			if (bitrate == 0) {
 				//Console.WriteLine("Could not read sample rate of your input file from Sox");
 				//return -3;
-				bitrate = 22050;
+				//bitrate = 22050;
 			}
 
 			//bufferBefore = new FixedSizeQueue<byte>(samplerate * 5);
