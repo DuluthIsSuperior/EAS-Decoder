@@ -86,7 +86,7 @@ namespace EAS_Decoder {
 			idx += 5;
 
 			if (message.Length >= idx) {
-				sender = message[idx..(idx + 8)];
+				sender = message.Substring(idx);
 			}
 
 			validation[headerNumber] = new Tuple<string, string, string, string, string, string, string>(issuer, eventCode, SAMECountyCodes, date, UTCTime, duration, sender);
@@ -210,15 +210,20 @@ namespace EAS_Decoder {
 
 			Console.WriteLine();
 			StringBuilder timeInfo = new StringBuilder("on ");
-			if (validation[2].Item4 != null && int.TryParse(validation[2].Item4, out int ordinalDate)) {
-				timeInfo.Append($"{new DateTime(DateTime.Now.Year, 1, 1).AddDays(ordinalDate - 1).ToShortDateString()} at ");
-			} else {
-				timeInfo.Append("unknown date at ");
-			}
-			if (validation[2].Item5 != null) {
-				timeInfo.Append($"{validation[2].Item5[0..2]}:{validation[2].Item5[2..4]} UTC for ");
-			} else {
-				timeInfo.Append("unknown time for ");
+			for (int i = 2; i >= 0; i++) {
+				if (validation[i] != null) {
+					if (validation[i].Item4 != null && int.TryParse(validation[i].Item4, out int ordinalDate)) {
+						timeInfo.Append($"{new DateTime(DateTime.Now.Year, 1, 1).AddDays(ordinalDate - 1).ToShortDateString()} at ");
+					} else {
+						timeInfo.Append("unknown date at ");
+					}
+					if (validation[i].Item5 != null) {
+						timeInfo.Append($"{validation[i].Item5[0..2]}:{validation[i].Item5[2..4]} UTC for ");
+					} else {
+						timeInfo.Append("unknown time for ");
+					}
+					break;
+				}
 			}
 
 			int hours = -1;
@@ -337,8 +342,21 @@ namespace EAS_Decoder {
 						dem_st.eomEnd = 0;
 						eom = false;
 					}
-          
-					if (ProcessManager.bitrate != 0) {
+
+					if (Program.Livestream) {
+						if (headerTonesReadIn > 0 && DateTime.Now - dem_st.headerDetected > new TimeSpan(0, 0, 5)) {
+							headerTonesReadIn = 0;
+							Console.WriteLine("Timeout occured waiting for EAS header tones");
+							PrintMessageDetails(dem_st.message);
+							timeout = 0;
+						}
+						if (eomTonesReadIn > 0 && DateTime.Now - dem_st.eomDetected > new TimeSpan(0, 0, 5)) {
+							eomTonesReadIn = 0;
+							record = false;
+							Console.WriteLine("Timeout occured waiting for EOM tones");
+							timeout = 0;
+						}
+					} else if (ProcessManager.bitrate != 0) {
 						if (headerTonesReadIn > 0 && bytesReadIn - headerLastDetected > timeout * 3 + (ProcessManager.bitrate / 8)) {
 							headerTonesReadIn = 0;
 							Console.WriteLine("Timeout occured waiting for EAS header tones");
@@ -351,22 +369,9 @@ namespace EAS_Decoder {
 							Console.WriteLine("Timeout occured waiting for EOM tones");
 							timeout = 0;
 						}
-				} else {
-					if (headerTonesReadIn > 0 && DateTime.Now - dem_st.headerDetected > new TimeSpan(0, 0, 5)) {
-						headerTonesReadIn = 0;
-						Console.WriteLine("Timeout occured waiting for EAS header tones");
-						PrintMessageDetails(dem_st.message);
-						timeout = 0;
 					}
-					if (eomTonesReadIn > 0 && DateTime.Now - dem_st.eomDetected > new TimeSpan(0, 0, 5)) {
-						eomTonesReadIn = 0;
-						record = false;
-						Console.WriteLine("Timeout occured waiting for EOM tones");
-						timeout = 0;
-					}
-				}
 
-				Array.Copy(fbuf, global_fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));
+					Array.Copy(fbuf, global_fbuf_cnt - overlap, fbuf, 0, overlap * sizeof(float));
 					global_fbuf_cnt = overlap;
 				}
 				bytesReadIn += bytesToRead;

@@ -260,7 +260,7 @@ namespace EAS_Decoder {
 			}
 
 			if (record) {
-				bufferBefore = new FixedSizeQueue<byte>(bitrate * 15);
+				bufferBefore = new FixedSizeQueue<byte>(bitrate * 5);
 			}
 			return 0;
 		}
