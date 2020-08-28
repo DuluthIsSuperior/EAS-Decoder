@@ -56,7 +56,7 @@ namespace EAS_Decoder {
 			return $"Unrecognized Alert ({eventCode})";
 		}
 
-		static Tuple<string, string, string, string, string, string>[] validation = new Tuple<string, string, string, string, string, string>[3] { null, null, null };
+		static Tuple<string, string, string, string, string, string, string>[] validation = new Tuple<string, string, string, string, string, string, string>[3] { null, null, null };
 		static void TryParseDetails(int headerNumber, string message) {
 			string issuer = message.Length >= 8 ? message[5..8] : "???";
 			string eventCode = message.Length >= 12 ? message[9..12] : "???";
@@ -79,9 +79,14 @@ namespace EAS_Decoder {
 			if (message.Length >= idx) {
 				UTCTime = message[idx..(idx + 4)];
 			}
-			Console.WriteLine(UTCTime);
+			idx += 5;
 
-			validation[headerNumber] = new Tuple<string, string, string, string, string, string>(issuer, eventCode, SAMECountyCodes, date, UTCTime, duration);
+			string sender = null;
+			if (message.Length >= idx) {
+				sender = message[idx..(idx + 8)];
+			}
+
+			validation[headerNumber] = new Tuple<string, string, string, string, string, string, string>(issuer, eventCode, SAMECountyCodes, date, UTCTime, duration, sender);
 		}
 
 		static string GetIssuerName(string issuerCode) {
@@ -106,7 +111,7 @@ namespace EAS_Decoder {
 			string[] eventCodes = new string[3];
 			string[] countyCodes = new string[3];
 			for (int i = 0; i < 3; i++) {
-				Tuple<string, string, string, string, string, string> v = validation[i];
+				Tuple<string, string, string, string, string, string, string> v = validation[i];
 				if (v != null) {
 					issuerCodes[i] = v.Item1;
 					eventCodes[i] = v.Item2;
@@ -217,6 +222,7 @@ namespace EAS_Decoder {
 
 			}
 			Console.WriteLine(timeInfo.ToString());
+			Console.WriteLine($"Sent by {message[^9..^1]}");
 
 			Console.WriteLine();
 			if (none) {
@@ -230,7 +236,7 @@ namespace EAS_Decoder {
 				Console.WriteLine("If audio quality is poor, this maybe an error. If these codes are valid, please run this program with the '-u' flag.\n");
 			}
 
-			validation = new Tuple<string, string, string, string, string, string>[3];
+			validation = new Tuple<string, string, string, string, string, string, string>[3];
 		}
 
 		static bool header = false;
