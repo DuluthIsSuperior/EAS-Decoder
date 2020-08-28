@@ -56,11 +56,11 @@ namespace EAS_Decoder {
 			return $"Unrecognized Alert ({eventCode})";
 		}
 
-		static Tuple<string, string, string[], string, string, string>[] validation = new Tuple<string, string, string[], string, string, string>[3] { null, null, null };
+		static Tuple<string, string, string, string, string, string>[] validation = new Tuple<string, string, string, string, string, string>[3] { null, null, null };
 		static void TryParseDetails(int headerNumber, string message) {
 			string issuer = message.Length >= 8 ? message[5..8] : "???";
 			string eventCode = message.Length >= 12 ? message[9..12] : "???";
-			string[] SAMECountyCodes = message.Length >= 13 + 23 ? message[13..^23].Split('-') : new string[0];
+			string SAMECountyCodes = message.Length >= 13 + 23 ? message[13..^23] : null;
 			string date = null;
 			try {
 				date = message[^17..^14];
@@ -74,7 +74,7 @@ namespace EAS_Decoder {
 				duration = message[^22..^18];
 			} catch (ArgumentOutOfRangeException) { }
 
-			validation[headerNumber] = new Tuple<string, string, string[], string, string, string>(issuer, eventCode, SAMECountyCodes, date, UTCTime, duration);
+			validation[headerNumber] = new Tuple<string, string, string, string, string, string>(issuer, eventCode, SAMECountyCodes, date, UTCTime, duration);
 		}
 
 		static string GetIssuerName(string issuerCode) {
@@ -97,14 +97,17 @@ namespace EAS_Decoder {
 		static void PrintMessageDetails(string message) {
 			string[] issuerCodes = new string[3];
 			string[] eventCodes = new string[3];
+			string[] countyCodes = new string[3];
 			for (int i = 0; i < 3; i++) {
-				Tuple<string, string, string[], string, string, string> v = validation[i];
+				Tuple<string, string, string, string, string, string> v = validation[i];
 				if (v != null) {
 					issuerCodes[i] = v.Item1;
 					eventCodes[i] = v.Item2;
+					countyCodes[i] = v.Item3;
 				} else {
 					issuerCodes[i] = "???";
 					eventCodes[i] = "???";
+					countyCodes[i] = null;
 				}
 			}
 
@@ -128,7 +131,6 @@ namespace EAS_Decoder {
 				}
 			}
 
-			//string eventCode = message.Length >= 12 ? message[9..12] : "???";
 			string eventName;
 			bool urgent = false;
 			bool national = false;
@@ -150,11 +152,27 @@ namespace EAS_Decoder {
 				}
 			}
 
-			//string eventName = GetEventName(eventCode, out bool urgent, out bool national);
-
 			Console.WriteLine($"\n{(national ? "NATIONAL ALERT" : "EMERGENCY ALERT SYSTEM")}\n\n" +
 				$"{issuer} has issued a {eventName} for");
-			string[] SAMECountyCodes = message.Length >= 13 + 23 ? message[13..^23].Split('-') : new string[0];
+
+			string sameCodes;
+			_01 = countyCodes[0] == countyCodes[1];
+			_02 = countyCodes[0] == countyCodes[2];
+			_12 = countyCodes[1] == countyCodes[2];
+			bool none = false;
+			if ((_01 && _12) || _01 || _02) {
+				sameCodes = countyCodes[0];
+			} else if (_12) {
+				sameCodes = countyCodes[1];
+			} else {    // if none are equal
+				none = true;
+				sameCodes = $"{countyCodes[0]}-{countyCodes[1]}-{countyCodes[2]}";
+			}
+
+			string[] SAMECountyCodes = new string[0];
+			if (sameCodes != null) {
+				SAMECountyCodes = sameCodes.Split('-');
+			}
 			List<string> unknownCounty = new List<string>();
 			for (int i = 0; i < SAMECountyCodes.Length; i++) {
 				string countyCode = SAMECountyCodes[i];
@@ -167,6 +185,7 @@ namespace EAS_Decoder {
 					unknownCounty.Add(countyCode);
 				}
 			}
+
 			Console.WriteLine();
 			StringBuilder timeInfo = new StringBuilder("on ");
 			try {
@@ -193,6 +212,9 @@ namespace EAS_Decoder {
 			Console.WriteLine(timeInfo.ToString());
 
 			Console.WriteLine();
+			if (none) {
+				Console.WriteLine("No counties matched between each header - duplicate counties may have been printed");
+			}
 			if (unknownCounty.Count > 0) {
 				Console.WriteLine($"Unknown county code{(unknownCounty.Count != 1 ? "s" : "")} found");
 				foreach (string county in unknownCounty) {
@@ -201,7 +223,7 @@ namespace EAS_Decoder {
 				Console.WriteLine("If audio quality is poor, this maybe an error. If these codes are valid, please run this program with the '-u' flag.\n");
 			}
 
-			validation = new Tuple<string, string, string[], string, string, string>[3];
+			validation = new Tuple<string, string, string, string, string, string>[3];
 		}
 
 		static bool header = false;
