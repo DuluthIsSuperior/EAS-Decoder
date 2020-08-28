@@ -2,7 +2,7 @@
   "profiles": {
     "EAS Decoder": {
       "commandName": "Project",
-      "commandLineArgs": "-i \"output.wav\" -t wav"
+      "commandLineArgs": "-i \"D:\\Users\\Kyle\\source\\repos\\EAS Encoder GUI\\EAS Encoder GUI\\bin\\Debug\\output.wav\" -t wav"
     }
   }
 }

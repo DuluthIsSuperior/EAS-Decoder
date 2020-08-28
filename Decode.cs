@@ -95,61 +95,35 @@ namespace EAS_Decoder {
 		}
 
 		static void PrintMessageDetails(string message) {
-			//string[] issuerCodes = new string[3];
-			//for (int i = 0; i < 3; i++) {
-			//	Tuple<string, string, string[], string, string, string> v = validation[i];
-			//	if (v != null) {
-			//		issuerCodes[i] = v.Item1;
-			//	} else {
-			//		issuerCodes[i] = "???";
-			//	}
-			//}
+			string[] issuerCodes = new string[3];
+			for (int i = 0; i < 3; i++) {
+				Tuple<string, string, string[], string, string, string> v = validation[i];
+				if (v != null) {
+					issuerCodes[i] = v.Item1;
+				} else {
+					issuerCodes[i] = "???";
+				}
+			}
 
-			//string issuer;
-
-			//bool _01 = issuerCodes[0] == issuerCodes[1];
-			//bool _02 = issuerCodes[0] == issuerCodes[2];
-			//bool _12 = issuerCodes[1] == issuerCodes[2];
-			//if ((_01 && _12) || _01 || _02) {
-			//	issuer = GetIssuerName(issuerCodes[0]);
-			//} else if (_12) {
-			//	issuer = GetIssuerName(issuerCodes[1]);
-			//} else {    // if none are equal
-			//	issuer = "Unknown Source";
-			//	bool[] valid = new bool[3];
-			//	for (int i = 0; i < 3; i++) {
-			//		issuerCodes[i] = GetIssuerName(issuerCodes[i]);
-			//		if (!issuerCodes[i].Contains("Unknown")) {
-			//			issuer = issuerCodes[i];
-			//			break;
-			//		}
-			//	}
-			//}
-
-			string issuerCode = message.Length >= 8 ? message[5..8] : "???";
 			string issuer;
-			switch (issuerCode) {
-				case "PEP":
-					issuer = "A Primary Entry Point System";
-					break;
-				case "CIV":
-					issuer = "Civil Authorities";
-					break;
-				case "WXR":
-					issuer = "The National Weather Service";
-					break;
-				case "EAS":
-					issuer = "An Emergency Alert System Participant";
-					break;
-				case "EAN":
-					issuer = "Emergency Action Notification Network";
-					break;
-				case "???":
-					issuer = "Incomplete Header";
-					break;
-				default:
-					issuer = "An Unknown Source";
-					break;
+
+			bool _01 = issuerCodes[0] == issuerCodes[1];
+			bool _02 = issuerCodes[0] == issuerCodes[2];
+			bool _12 = issuerCodes[1] == issuerCodes[2];
+			if ((_01 && _12) || _01 || _02) {
+				issuer = GetIssuerName(issuerCodes[0]);
+			} else if (_12) {
+				issuer = GetIssuerName(issuerCodes[1]);
+			} else {    // if none are equal
+				issuer = "An Unknown Source";
+				bool[] valid = new bool[3];
+				for (int i = 0; i < 3; i++) {
+					issuerCodes[i] = GetIssuerName(issuerCodes[i]);
+					if (!issuerCodes[i].Contains("Unknown")) {
+						issuer = issuerCodes[i];
+						break;
+					}
+				}
 			}
 
 			string eventCode = message.Length >= 12 ? message[9..12] : "???";
