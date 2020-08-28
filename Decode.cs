@@ -75,12 +75,12 @@ namespace EAS_Decoder {
 			}
 			idx += 5;
 
-			if (message.Length >= idx) {
+			if (message.Length >= idx + 3) {
 				date = message[idx..(idx + 3)];
 			}
 			idx += 3;
 
-			if (message.Length >= idx) {
+			if (message.Length >= idx + 4) {
 				UTCTime = message[idx..(idx + 4)];
 			}
 			idx += 5;
