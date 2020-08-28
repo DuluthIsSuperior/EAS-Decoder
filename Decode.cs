@@ -61,18 +61,25 @@ namespace EAS_Decoder {
 			string issuer = message.Length >= 8 ? message[5..8] : "???";
 			string eventCode = message.Length >= 12 ? message[9..12] : "???";
 			string SAMECountyCodes = message.Length >= 13 + 23 ? message[13..^23] : null;
-			string date = null;
-			try {
-				date = message[^17..^14];
-			} catch (ArgumentOutOfRangeException) { }
-			string UTCTime = null;
-			try {
-				UTCTime = message[^14..^10];
-			} catch (ArgumentOutOfRangeException) { }
+
+			int idx = 13 + SAMECountyCodes.Length + 1;
 			string duration = null;
-			try {
-				duration = message[^22..^18];
-			} catch (ArgumentOutOfRangeException) { }
+			if (message.Length >= idx) {
+				duration = message[idx..(idx + 4)];
+			}
+			idx += 5;
+
+			string date = null;
+			if (message.Length >= idx) {
+				date = message[idx..(idx + 3)];
+			}
+			idx += 3;
+
+			string UTCTime = null;
+			if (message.Length >= idx) {
+				UTCTime = message[idx..(idx + 4)];
+			}
+			Console.WriteLine(UTCTime);
 
 			validation[headerNumber] = new Tuple<string, string, string, string, string, string>(issuer, eventCode, SAMECountyCodes, date, UTCTime, duration);
 		}
