@@ -61,8 +61,11 @@ namespace EAS_Decoder {
 			string issuer = message.Length >= 8 ? message[5..8] : "???";
 			string eventCode = message.Length >= 12 ? message[9..12] : "???";
 			string SAMECountyCodes = message.Length >= 13 + 23 ? message[13..^23] : null;
+			string date = null;
+			string UTCTime = null;
+			string sender = null;
 
-			int idx = 13 + SAMECountyCodes.Length + 1;
+			int idx = 13 + (SAMECountyCodes != null ? SAMECountyCodes.Length : 0) + 1;
 			string duration = null;
 			if (message.Length >= idx) {
 				string d = message[idx..(idx + 4)];
@@ -72,19 +75,16 @@ namespace EAS_Decoder {
 			}
 			idx += 5;
 
-			string date = null;
 			if (message.Length >= idx) {
 				date = message[idx..(idx + 3)];
 			}
 			idx += 3;
 
-			string UTCTime = null;
 			if (message.Length >= idx) {
 				UTCTime = message[idx..(idx + 4)];
 			}
 			idx += 5;
 
-			string sender = null;
 			if (message.Length >= idx) {
 				sender = message[idx..(idx + 8)];
 			}
