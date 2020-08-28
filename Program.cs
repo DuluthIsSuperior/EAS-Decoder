@@ -148,8 +148,6 @@ namespace EAS_Decoder {
 					}
 				} else if (args[i] == "-i" || args[i] == "--input-file" || args[i] == "--input") {
 					i++;
-					Console.WriteLine(args[i]);
-					Console.WriteLine($"{AppDomain.CurrentDomain.BaseDirectory}{args[i]}");
 					if (File.Exists(args[i])) {
 						inputFileDirectory = args[i];
 					} else {
