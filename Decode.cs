@@ -210,7 +210,7 @@ namespace EAS_Decoder {
 
 			Console.WriteLine();
 			StringBuilder timeInfo = new StringBuilder("on ");
-			for (int i = validation.Length - 1; i >= 0; i++) {
+			for (int i = validation.Length - 1; i >= 0; i--) {
 				if (validation[i] != null) {
 					if (validation[i].Item4 != null && int.TryParse(validation[i].Item4, out int ordinalDate)) {
 						timeInfo.Append($"{new DateTime(DateTime.Now.Year, 1, 1).AddDays(ordinalDate - 1).ToShortDateString()} at ");
