@@ -200,29 +200,23 @@ namespace EAS_Decoder {
 
 			Console.WriteLine();
 			StringBuilder timeInfo = new StringBuilder("on ");
-			try {
-				if (int.TryParse(message[^17..^14], out int ordinalDate)) {
-					timeInfo.Append(new DateTime(DateTime.Now.Year, 1, 1).AddDays(ordinalDate - 1).ToShortDateString());
-				} else {
-					timeInfo.Append(message[^17..^14]);
-				}
-				timeInfo.Append($" at {message[^14..^12]}:{message[^12..^10]} UTC for ");
-				string duration = message[^22..^18];
-				if (int.TryParse(duration[0..2], out int hours)) {
-					timeInfo.Append($"{hours} hour{(hours != 1 ? "s" : "")} and ");
-				} else {
-					timeInfo.Append($"{duration[0..2]} hour(s) and ");
-				}
-				if (int.TryParse(duration[2..4], out int minutes)) {
-					timeInfo.Append($"{minutes} minute{(minutes != 1 ? "s" : "")}");
-				} else {
-					timeInfo.Append($"{duration[2..4]} minute(s)");
-				}
-			} catch (ArgumentOutOfRangeException) {
-
+			if (validation[2].Item4 != null && int.TryParse(validation[2].Item4, out int ordinalDate)) {
+				timeInfo.Append($"{new DateTime(DateTime.Now.Year, 1, 1).AddDays(ordinalDate - 1).ToShortDateString()} at ");
+			} else {
+				timeInfo.Append("unknown date at ");
+			}
+			if (validation[2].Item5 != null) {
+				timeInfo.Append($"{validation[2].Item5[0..2]}:{validation[2].Item5[2..4]} UTC for ");
+			} else {
+				timeInfo.Append("unknown time for ");
+			}
+			if (validation[2].Item6 != null) {
+				timeInfo.Append($"{validation[2].Item6[0..2]}:{validation[2].Item6[2..4]}");
+			} else {
+				timeInfo.Append("an unknown duration");
 			}
 			Console.WriteLine(timeInfo.ToString());
-			Console.WriteLine($"Sent by {message[^9..^1]}");
+			Console.WriteLine($"Sent by {validation[2].Item7}");
 
 			Console.WriteLine();
 			if (none) {
