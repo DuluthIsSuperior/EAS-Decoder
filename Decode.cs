@@ -109,6 +109,10 @@ namespace EAS_Decoder {
 			}
 		}
 
+		static bool IsEqualAndValid(string value1, string value2, string invalid) {
+			return (value1 == value2) && value1 != invalid && value2 != invalid;
+		}
+
 		static void PrintMessageDetails(string message) {
 			string[] issuerCodes = new string[3];
 			string[] eventCodes = new string[3];
@@ -131,9 +135,9 @@ namespace EAS_Decoder {
 
 			string issuer;
 
-			bool _01 = issuerCodes[0] == issuerCodes[1];
-			bool _02 = issuerCodes[0] == issuerCodes[2];
-			bool _12 = issuerCodes[1] == issuerCodes[2];
+			bool _01 = IsEqualAndValid(issuerCodes[0], issuerCodes[1], "???");
+			bool _02 = IsEqualAndValid(issuerCodes[0], issuerCodes[2], "???");
+			bool _12 = IsEqualAndValid(issuerCodes[1], issuerCodes[2], "???");
 			if ((_01 && _12) || _01 || _02) {
 				issuer = GetIssuerName(issuerCodes[0]);
 			} else if (_12) {
@@ -152,9 +156,9 @@ namespace EAS_Decoder {
 			string eventName;
 			bool urgent = false;
 			bool national = false;
-			_01 = eventCodes[0] == eventCodes[1];
-			_02 = eventCodes[0] == eventCodes[2];
-			_12 = eventCodes[1] == eventCodes[2];
+			_01 = IsEqualAndValid(eventCodes[0], eventCodes[1], "???");
+			_02 = IsEqualAndValid(eventCodes[0], eventCodes[2], "???");
+			_12 = IsEqualAndValid(eventCodes[1], eventCodes[2], "???");
 			if ((_01 && _12) || _01 || _02) {
 				eventName = GetEventName(eventCodes[0], out urgent, out national);
 			} else if (_12) {
@@ -174,9 +178,9 @@ namespace EAS_Decoder {
 				$"{issuer} has issued a {eventName} for");
 
 			string sameCodes;
-			_01 = countyCodes[0] == countyCodes[1];
-			_02 = countyCodes[0] == countyCodes[2];
-			_12 = countyCodes[1] == countyCodes[2];
+			_01 = IsEqualAndValid(countyCodes[0], countyCodes[1], null);
+			_02 = IsEqualAndValid(countyCodes[0], countyCodes[2], null);
+			_12 = IsEqualAndValid(countyCodes[1], countyCodes[2], null);
 			bool none = false;
 			if ((_01 && _12) || _01 || _02) {
 				sameCodes = countyCodes[0];
@@ -219,9 +223,9 @@ namespace EAS_Decoder {
 
 			int hours = -1;
 			int minutes = -1;
-			_01 = (durations[0] == durations[1]) && (durations[0] != null && durations[1] != null);
-			_02 = (durations[0] == durations[2]) && (durations[0] != null && durations[2] != null);
-			_12 = (durations[1] == durations[2]) && (durations[1] != null && durations[2] != null);
+			_01 = IsEqualAndValid(durations[0], durations[1], null);
+			_02 = IsEqualAndValid(durations[0], durations[2], null);
+			_12 = IsEqualAndValid(durations[1], durations[2], null);
 			if ((_01 && _12) || _01 || _02) {
 				hours = int.Parse(durations[0][0..2]);
 				minutes = int.Parse(durations[0][2..4]);
