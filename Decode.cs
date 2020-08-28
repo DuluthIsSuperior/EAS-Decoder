@@ -209,6 +209,7 @@ namespace EAS_Decoder {
 			}
 
 			Console.WriteLine();
+			string sender = "unknown";
 			StringBuilder timeInfo = new StringBuilder("on ");
 			for (int i = validation.Length - 1; i >= 0; i--) {
 				if (validation[i] != null) {
@@ -222,6 +223,7 @@ namespace EAS_Decoder {
 					} else {
 						timeInfo.Append("unknown time for ");
 					}
+					sender = validation[i].Item7;
 					break;
 				}
 			}
@@ -253,7 +255,7 @@ namespace EAS_Decoder {
 			}
 
 			Console.WriteLine(timeInfo.ToString());
-			Console.WriteLine($"Sent by {validation[2].Item7}");
+			Console.WriteLine($"Sent by {sender}");
 
 			Console.WriteLine();
 			if (none) {
