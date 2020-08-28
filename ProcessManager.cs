@@ -260,7 +260,7 @@ namespace EAS_Decoder {
 			}
 
 			if (Program.Livestream) {
-				bitrate = 22050;
+				bitrate = 22050 * 5;
 			}
 
 			if (record) {
