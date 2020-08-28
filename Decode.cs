@@ -42,16 +42,16 @@ namespace EAS_Decoder {
 			string subCode = eventCode.Substring(0, 2);
 			if (eventCode[2] == 'A') {  // watch
 				if (subCode == "AV") { return "Avalanche Watch"; } else if (subCode == "CF") { return "Coastal Flood Watch"; } else if (subCode == "FF") { return "Flash Flood Watch"; } else if (subCode == "FL") { return "Flood Watch"; } else if (subCode == "HU") { return "Hurricane Watch"; } else if (subCode == "HW") { return "High Wind Watch"; } else if (subCode == "SV") { return "Severe Thunderstorm Watch"; } else if (subCode == "TO") { return "Tornado Watch"; } else if (subCode == "TR") { return "Tropical Storm Watch"; } else if (subCode == "TS") { return "Tsunami Watch"; } else if (subCode == "WS") { return "Winter Storm Watch"; }
-				return "Unrecognized Watch";
+				return $"Unrecognized Watch ({eventCode})";
 			} else if (eventCode[2] == 'W') {
 				if (subCode == "AV") { return "Avalanche Warning"; } else if (subCode == "BZ") { return "Blizzard Warning"; } else if (subCode == "CD") { urgent = true; return "Civil Danger Warning"; } else if (subCode == "CF") { return "Coastal Flood Warning"; } else if (subCode == "DS") { return "Dust Storm Warning"; } else if (subCode == "EQ") { return "Earthquake Warning"; } else if (subCode == "FF") { return "Flash Flood Warning"; } else if (subCode == "FL") { return "Flood Warning"; } else if (subCode == "FR") { return "Fire Warning"; } else if (subCode == "HM") { urgent = true; return "Hazardous Materials Warning"; } else if (subCode == "HU") { return "Hurricane Warning"; } else if (subCode == "HW") { return "High Wind Warning"; } else if (subCode == "LE") { urgent = true; return "Law Enforcement Warning"; } else if (subCode == "NU") { urgent = true; return "Nuclear Power Plant Warning"; } else if (subCode == "RH") { urgent = true; return "Radiological Hazard Warning"; } else if (subCode == "SM") { return "Special Marine Warning"; } else if (subCode == "SP") { urgent = true; return "Shelter In-Place Warning"; } else if (subCode == "TR") { return "Tropical Storm Warning"; } else if (subCode == "TS") { return "Tsunami Warning"; } else if (subCode == "VO") { return "Volcano Warning"; } else if (subCode == "WS") { return "Winter Storm Warning"; }
-				return "Unrecognized Warning";
+				return $"Unrecognized Warning ({eventCode})";
 			} else if (eventCode[2] == 'S') {
 				if (subCode == "FF") { return "Flash Flood Statement"; } else if (subCode == "FL") { return "Flood Statement"; } else if (subCode == "HL") { return "Hurricane Statement"; } else if (subCode == "SP") { return "Special Weather Statement"; } else if (subCode == "SV") { return "Severe Weather Statement"; }
-				return "Unrecognized Statement";
+				return $"Unrecognized Statement ({eventCode})";
 			} else if (eventCode[2] == 'E') {
 				if (subCode == "CA") { return "Child Abduction Emergency"; } else if (subCode == "LA") { return "Local Area Emergency"; } else if (subCode == "TO") { return "911 Telephone Outage Emergency"; }
-				return "Unrecognized Emergency";
+				return $"Unrecognized Emergency ({eventCode})";
 			} else if (eventCode == "SVR") { return "Severe Thunderstorm Warning"; } else if (eventCode == "TOR") { return "Tornado Warning"; } else if (eventCode == "ADR") { return "Administrative Message"; } else if (eventCode == "CEM") { return "Civil Emergency Message"; } else if (eventCode == "DMO") { return "Practice/Demo"; } else if (eventCode == "EAN") { national = true; return "Emergency Action Notification"; } else if (eventCode == "EAT") { national = true; return "Emergency Action Termination"; } else if (eventCode == "EVI") { national = true; return "Evacuation Immediate"; } else if (eventCode == "NIC") { return "National Information Center"; } else if (eventCode == "NMN") { return "Network Message Notification"; } else if (eventCode == "NPT") { return "National Periodic Test"; } else if (eventCode == "RMT") { return "Required Monthly Test"; } else if (eventCode == "RWT") { return "Required Weekly Test"; }
 			return $"Unrecognized Alert ({eventCode})";
 		}
@@ -96,12 +96,15 @@ namespace EAS_Decoder {
 
 		static void PrintMessageDetails(string message) {
 			string[] issuerCodes = new string[3];
+			string[] eventCodes = new string[3];
 			for (int i = 0; i < 3; i++) {
 				Tuple<string, string, string[], string, string, string> v = validation[i];
 				if (v != null) {
 					issuerCodes[i] = v.Item1;
+					eventCodes[i] = v.Item2;
 				} else {
 					issuerCodes[i] = "???";
+					eventCodes[i] = "???";
 				}
 			}
 
@@ -116,7 +119,6 @@ namespace EAS_Decoder {
 				issuer = GetIssuerName(issuerCodes[1]);
 			} else {    // if none are equal
 				issuer = "An Unknown Source";
-				bool[] valid = new bool[3];
 				for (int i = 0; i < 3; i++) {
 					issuerCodes[i] = GetIssuerName(issuerCodes[i]);
 					if (!issuerCodes[i].Contains("Unknown")) {
@@ -126,8 +128,29 @@ namespace EAS_Decoder {
 				}
 			}
 
-			string eventCode = message.Length >= 12 ? message[9..12] : "???";
-			string eventName = GetEventName(eventCode, out bool urgent, out bool national);
+			//string eventCode = message.Length >= 12 ? message[9..12] : "???";
+			string eventName;
+			bool urgent = false;
+			bool national = false;
+			_01 = eventCodes[0] == eventCodes[1];
+			_02 = eventCodes[0] == eventCodes[2];
+			_12 = eventCodes[1] == eventCodes[2];
+			if ((_01 && _12) || _01 || _02) {
+				eventName = GetEventName(eventCodes[0], out urgent, out national);
+			} else if (_12) {
+				eventName = GetEventName(eventCodes[1], out urgent, out national);
+			} else {    // if none are equal
+				eventName = $"Unrecognized Alert ({string.Join(", ", eventCodes)})";
+				for (int i = 0; i < 3; i++) {
+					eventCodes[i] = GetEventName(eventCodes[i], out urgent, out national);
+					if (!eventCodes[i].Contains("Unrecognized")) {
+						eventName = eventCodes[i];
+						break;
+					}
+				}
+			}
+
+			//string eventName = GetEventName(eventCode, out bool urgent, out bool national);
 
 			Console.WriteLine($"\n{(national ? "NATIONAL ALERT" : "EMERGENCY ALERT SYSTEM")}\n\n" +
 				$"{issuer} has issued a {eventName} for");
@@ -147,8 +170,8 @@ namespace EAS_Decoder {
 			Console.WriteLine();
 			StringBuilder timeInfo = new StringBuilder("on ");
 			try {
-				if (int.TryParse(message[^17..^14], out int julianDate)) {
-					timeInfo.Append(new DateTime(DateTime.Now.Year, 1, 1).AddDays(julianDate - 1).ToShortDateString());
+				if (int.TryParse(message[^17..^14], out int ordinalDate)) {
+					timeInfo.Append(new DateTime(DateTime.Now.Year, 1, 1).AddDays(ordinalDate - 1).ToShortDateString());
 				} else {
 					timeInfo.Append(message[^17..^14]);
 				}
