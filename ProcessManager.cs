@@ -259,6 +259,10 @@ namespace EAS_Decoder {
 				return didNotLoad;
 			}
 
+			if (Program.Livestream) {
+				bitrate = 22050;
+			}
+
 			if (record) {
 				bufferBefore = new FixedSizeQueue<byte>(bitrate * 5);
 			}
