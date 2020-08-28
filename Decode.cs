@@ -65,7 +65,10 @@ namespace EAS_Decoder {
 			int idx = 13 + SAMECountyCodes.Length + 1;
 			string duration = null;
 			if (message.Length >= idx) {
-				duration = message[idx..(idx + 4)];
+				string d = message[idx..(idx + 4)];
+				if (int.TryParse(d, out _)) {
+					duration = d;
+				}
 			}
 			idx += 5;
 
@@ -110,16 +113,19 @@ namespace EAS_Decoder {
 			string[] issuerCodes = new string[3];
 			string[] eventCodes = new string[3];
 			string[] countyCodes = new string[3];
+			string[] durations = new string[3];
 			for (int i = 0; i < 3; i++) {
 				Tuple<string, string, string, string, string, string, string> v = validation[i];
 				if (v != null) {
 					issuerCodes[i] = v.Item1;
 					eventCodes[i] = v.Item2;
 					countyCodes[i] = v.Item3;
+					durations[i] = v.Item6;
 				} else {
 					issuerCodes[i] = "???";
 					eventCodes[i] = "???";
 					countyCodes[i] = null;
+					durations[i] = null;
 				}
 			}
 
@@ -210,11 +216,33 @@ namespace EAS_Decoder {
 			} else {
 				timeInfo.Append("unknown time for ");
 			}
-			if (validation[2].Item6 != null) {
-				timeInfo.Append($"{validation[2].Item6[0..2]}:{validation[2].Item6[2..4]}");
+
+			int hours = -1;
+			int minutes = -1;
+			_01 = (durations[0] == durations[1]) && (durations[0] != null && durations[1] != null);
+			_02 = (durations[0] == durations[2]) && (durations[0] != null && durations[2] != null);
+			_12 = (durations[1] == durations[2]) && (durations[1] != null && durations[2] != null);
+			if ((_01 && _12) || _01 || _02) {
+				hours = int.Parse(durations[0][0..2]);
+				minutes = int.Parse(durations[0][2..4]);
+			} else if (_12) {
+				hours = int.Parse(durations[1][0..2]);
+				minutes = int.Parse(durations[1][2..4]);
+			} else {    // if none are equal
+				for (int i = 0; i < 3; i++) {
+					if (durations[i] != null) {
+						hours = int.Parse(durations[i][0..2]);
+						minutes = int.Parse(durations[i][2..4]);
+						break;
+					}
+				}
+			}
+			if (hours != -1 && minutes != -1) {
+				timeInfo.Append($"{hours}:{minutes}");
 			} else {
 				timeInfo.Append("an unknown duration");
 			}
+
 			Console.WriteLine(timeInfo.ToString());
 			Console.WriteLine($"Sent by {validation[2].Item7}");
 
