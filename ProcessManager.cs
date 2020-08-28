@@ -100,7 +100,7 @@ namespace EAS_Decoder {
 		public static int ConvertAndDecode(string inputFile, string inputFileType, string outputFile) {
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = "cmd",
-				Arguments = $"/C \"ffmpeg -i {inputFile} -f {inputFileType} - | sox -V2 -V2 -t {inputFileType} - -t raw -e signed-integer -b 16 -r 22050 - remix 1\"",
+				Arguments = $"/C \"ffmpeg -i \"{inputFile}\" -f {inputFileType} - | sox -V2 -V2 -t {inputFileType} - -t raw -e signed-integer -b 16 -r 22050 - remix 1\"",
 				WindowStyle = ProcessWindowStyle.Hidden,
 				UseShellExecute = false,
 				CreateNoWindow = false,
@@ -121,7 +121,7 @@ namespace EAS_Decoder {
 				soxProcess.EnableRaisingEvents = true;
 				soxProcess.BeginErrorReadLine();
 				soxProcess.ErrorDataReceived += new DataReceivedEventHandler((s, e) => {
-					// needed to flush standard error so that it doesn't cause the process to hang
+					// needed to flush standard error so that it does not make the process to hang
 				});
 
 				FileStream baseStream = (FileStream) soxProcess.StandardOutput.BaseStream;
@@ -217,7 +217,7 @@ namespace EAS_Decoder {
 
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = "cmd",
-				Arguments = $"/C \"sox --i {filepath}\"",
+				Arguments = $"/C \"sox --i \"{filepath}\"\"",
 				WindowStyle = ProcessWindowStyle.Hidden,
 				UseShellExecute = false,
 				CreateNoWindow = false,
@@ -260,7 +260,7 @@ namespace EAS_Decoder {
 			}
 
 			if (record) {
-				bufferBefore = new FixedSizeQueue<byte>(bitrate * 5);
+				bufferBefore = new FixedSizeQueue<byte>(bitrate * 15);
 			}
 			return 0;
 		}

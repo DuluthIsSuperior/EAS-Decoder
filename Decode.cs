@@ -56,7 +56,76 @@ namespace EAS_Decoder {
 			return $"Unrecognized Alert ({eventCode})";
 		}
 
+		static Tuple<string, string, string[], string, string, string>[] validation = new Tuple<string, string, string[], string, string, string>[3] { null, null, null };
+		static void TryParseDetails(int headerNumber, string message) {
+			string issuer = message.Length >= 8 ? message[5..8] : "???";
+			string eventCode = message.Length >= 12 ? message[9..12] : "???";
+			string[] SAMECountyCodes = message.Length >= 13 + 23 ? message[13..^23].Split('-') : new string[0];
+			string date = null;
+			try {
+				date = message[^17..^14];
+			} catch (ArgumentOutOfRangeException) { }
+			string UTCTime = null;
+			try {
+				UTCTime = message[^14..^10];
+			} catch (ArgumentOutOfRangeException) { }
+			string duration = null;
+			try {
+				duration = message[^22..^18];
+			} catch (ArgumentOutOfRangeException) { }
+
+			validation[headerNumber] = new Tuple<string, string, string[], string, string, string>(issuer, eventCode, SAMECountyCodes, date, UTCTime, duration);
+		}
+
+		static string GetIssuerName(string issuerCode) {
+			switch (issuerCode) {
+				case "PEP":
+					return "A Primary Entry Point System";
+				case "CIV":
+					return "Civil Authorities";
+				case "WXR":
+					return "The National Weather Service";
+				case "EAS":
+					return "An Emergency Alert System Participant";
+				case "EAN":
+					return "Emergency Action Notification Network";
+				default:
+					return "An Unknown Source";
+			}
+		}
+
 		static void PrintMessageDetails(string message) {
+			//string[] issuerCodes = new string[3];
+			//for (int i = 0; i < 3; i++) {
+			//	Tuple<string, string, string[], string, string, string> v = validation[i];
+			//	if (v != null) {
+			//		issuerCodes[i] = v.Item1;
+			//	} else {
+			//		issuerCodes[i] = "???";
+			//	}
+			//}
+
+			//string issuer;
+
+			//bool _01 = issuerCodes[0] == issuerCodes[1];
+			//bool _02 = issuerCodes[0] == issuerCodes[2];
+			//bool _12 = issuerCodes[1] == issuerCodes[2];
+			//if ((_01 && _12) || _01 || _02) {
+			//	issuer = GetIssuerName(issuerCodes[0]);
+			//} else if (_12) {
+			//	issuer = GetIssuerName(issuerCodes[1]);
+			//} else {    // if none are equal
+			//	issuer = "Unknown Source";
+			//	bool[] valid = new bool[3];
+			//	for (int i = 0; i < 3; i++) {
+			//		issuerCodes[i] = GetIssuerName(issuerCodes[i]);
+			//		if (!issuerCodes[i].Contains("Unknown")) {
+			//			issuer = issuerCodes[i];
+			//			break;
+			//		}
+			//	}
+			//}
+
 			string issuerCode = message.Length >= 8 ? message[5..8] : "???";
 			string issuer;
 			switch (issuerCode) {
@@ -84,11 +153,9 @@ namespace EAS_Decoder {
 			}
 
 			string eventCode = message.Length >= 12 ? message[9..12] : "???";
-			//string eventName = GetEventName(eventCode, out bool urgentAlert, out bool nationalAlert);
-			string eventName = eventCode;
+			string eventName = GetEventName(eventCode, out bool urgent, out bool national);
 
-			//Console.WriteLine($"\n{(nationalAlert ? "NATIONAL ALERT" : "EMERGENCY ALERT SYSTEM")}\n\n" +
-			Console.WriteLine("\nEMERGENCY ALERT SYSTEM\n\n" +
+			Console.WriteLine($"\n{(national ? "NATIONAL ALERT" : "EMERGENCY ALERT SYSTEM")}\n\n" +
 				$"{issuer} has issued a {eventName} for");
 			string[] SAMECountyCodes = message.Length >= 13 + 23 ? message[13..^23].Split('-') : new string[0];
 			List<string> unknownCounty = new List<string>();
@@ -137,7 +204,7 @@ namespace EAS_Decoder {
 				Console.WriteLine("If audio quality is poor, this maybe an error. If these codes are valid, please run this program with the '-u' flag.\n");
 			}
 
-			//issuerReceived = new string[3];
+			validation = new Tuple<string, string, string[], string, string, string>[3];
 		}
 
 		static bool header = false;
@@ -180,6 +247,9 @@ namespace EAS_Decoder {
 					if (dem_st.headerEnd != 0) {
 						dem_st.headerEnd += (uint) bytesReadIn;
 						headerLastDetected = dem_st.headerEnd;
+
+						TryParseDetails(headerTonesReadIn, dem_st.message);
+
 						if (++headerTonesReadIn == 3) {
 							headerTonesReadIn = 0;
 							PrintMessageDetails(dem_st.message);

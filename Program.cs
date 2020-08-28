@@ -153,6 +153,7 @@ namespace EAS_Decoder {
 					} else {
 						if (!ValidURL(args[i])) {
 							Console.WriteLine($"Could not open file or URL: {args[i]}");
+							Console.WriteLine("If your file path contains spaces, please put it in quotation marks");
 							Environment.Exit(4);
 						}
 						Livestream = true;

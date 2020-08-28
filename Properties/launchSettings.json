@@ -2,7 +2,7 @@
   "profiles": {
     "EAS Decoder": {
       "commandName": "Project",
-      "commandLineArgs": "-i workson\\long.wav -t wav -r"
+      "commandLineArgs": "-i \"output.wav\" -t wav"
     }
   }
 }
