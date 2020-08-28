@@ -100,7 +100,7 @@ namespace EAS_Decoder {
 		public static int ConvertAndDecode(string inputFile, string inputFileType, string outputFile) {
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = "cmd",
-				Arguments = $"/C \"ffmpeg -i {inputFile} -f {inputFileType} - | sox -V2 -V2 -t {inputFileType} - -t raw -e signed-integer -b 16 -r 22050 - remix 1\"",
+				Arguments = $"/C \"ffmpeg -i \"{inputFile}\" -f {inputFileType} - | sox -V2 -V2 -t {inputFileType} - -t raw -e signed-integer -b 16 -r 22050 - remix 1\"",
 				WindowStyle = ProcessWindowStyle.Hidden,
 				UseShellExecute = false,
 				CreateNoWindow = false,
@@ -217,7 +217,7 @@ namespace EAS_Decoder {
 
 			ProcessStartInfo startInfo = new ProcessStartInfo {
 				FileName = "cmd",
-				Arguments = $"/C \"sox --i {filepath}\"",
+				Arguments = $"/C \"sox --i \"{filepath}\"\"",
 				WindowStyle = ProcessWindowStyle.Hidden,
 				UseShellExecute = false,
 				CreateNoWindow = false,
