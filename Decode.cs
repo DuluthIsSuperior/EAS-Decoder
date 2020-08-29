@@ -249,7 +249,7 @@ namespace EAS_Decoder {
 				}
 			}
 			if (hours != -1 && minutes != -1) {
-				timeInfo.Append($"{hours}:{minutes}");
+				timeInfo.Append($"{hours} hour{(hours != 1 ? "s" : "")} and {minutes} minute{(minutes != 1 ? "s" : "")}");
 			} else {
 				timeInfo.Append("an unknown duration");
 			}
@@ -346,6 +346,7 @@ namespace EAS_Decoder {
 					}
 
 					if (Program.Livestream) {
+						//TODO: Look into extending timeout
 						if (headerTonesReadIn > 0 && DateTime.Now - dem_st.headerDetected > new TimeSpan(0, 0, 5)) {
 							headerTonesReadIn = 0;
 							Console.WriteLine("Timeout occured waiting for EAS header tones");

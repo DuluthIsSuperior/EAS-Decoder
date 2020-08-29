@@ -48,18 +48,22 @@ namespace EAS_Decoder {
 			return MADFailedToLoad ? -1 : fileFailedToOpen ? -2 : 0;
 		}
 
-		static void ConvertRAWToMP3(string filename) {
-			Console.WriteLine($"Alert saved to {filename}.mp3\n");
-			ProcessStartInfo startInfo = new ProcessStartInfo {
+		static ProcessStartInfo GetStartInfo(string args, bool redirectStdOut, bool redirectStdErr) {
+			return new ProcessStartInfo {
 				FileName = "cmd",
-				Arguments = $"/C \"sox -r 22050 -e signed -b 16 -t raw \"{filename}.raw\" -t mp3 \"{filename}.mp3\"\"",
+				Arguments = $"/C \"{args}\"",
 				WindowStyle = ProcessWindowStyle.Hidden,
 				UseShellExecute = false,
 				CreateNoWindow = false,
 				WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
-				RedirectStandardOutput = false,
-				RedirectStandardError = true
+				RedirectStandardOutput = redirectStdOut,
+				RedirectStandardError = redirectStdErr
 			};
+		}
+
+		static void ConvertRAWToMP3(string filename) {
+			Console.WriteLine($"Alert saved to {filename}.mp3\n");
+			ProcessStartInfo startInfo = GetStartInfo($"sox -r 22050 -e signed -b 16 -t raw \"{filename}.raw\" -t mp3 \"{filename}.mp3\"", false, true);
 			using (Process soxProcess = Process.Start(startInfo)) {
 				string line = soxProcess.StandardError.ReadLine();
 				while (line != null) {
@@ -98,17 +102,7 @@ namespace EAS_Decoder {
 		static FileStream easRecord = null;
 		static readonly string[] months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 		public static int ConvertAndDecode(string inputFile, string inputFileType, string outputFile) {
-			ProcessStartInfo startInfo = new ProcessStartInfo {
-				FileName = "cmd",
-				Arguments = $"/C \"ffmpeg -i \"{inputFile}\" -f {inputFileType} - | sox -V2 -V2 -t {inputFileType} - -t raw -e signed-integer -b 16 -r 22050 - remix 1\"",
-				WindowStyle = ProcessWindowStyle.Hidden,
-				UseShellExecute = false,
-				CreateNoWindow = false,
-				WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
-				RedirectStandardOutput = true,
-				RedirectStandardError = true
-			};
-
+			ProcessStartInfo startInfo = GetStartInfo($"ffmpeg -i \"{inputFile}\" -f {inputFileType} - | sox -V2 -V2 -t {inputFileType} - -t raw -e signed-integer -b 16 -r 22050 - remix 1", true, true);
 			FileStream fs = null;
 			if (outputFile != null) {
 				File.WriteAllText(outputFile, string.Empty);
@@ -214,17 +208,7 @@ namespace EAS_Decoder {
 
 		public static int GetFileInformation(string filepath, bool record) {
 			fileCreated = DateTime.Now;
-
-			ProcessStartInfo startInfo = new ProcessStartInfo {
-				FileName = "cmd",
-				Arguments = $"/C \"sox --i \"{filepath}\"\"",
-				WindowStyle = ProcessWindowStyle.Hidden,
-				UseShellExecute = false,
-				CreateNoWindow = false,
-				WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
-				RedirectStandardOutput = true,
-				RedirectStandardError = true
-			};
+			ProcessStartInfo startInfo = GetStartInfo($"sox --i \"{filepath}", true, true);
 
 			int didNotLoad;
 			using (Process soxProcess = Process.Start(startInfo)) {
