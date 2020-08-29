@@ -102,7 +102,7 @@ namespace EAS_Decoder {
 		static FileStream easRecord = null;
 		static readonly string[] months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 		public static int ConvertAndDecode(string inputFile, string inputFileType, string outputFile) {
-			ProcessStartInfo startInfo = GetStartInfo($"ffmpeg -i \"{inputFile}\" -f {inputFileType} - | sox -V2 -V2 -t {inputFileType} - -t raw -e signed-integer -b 16 -r 22050 - remix 1", true, true);
+			ProcessStartInfo startInfo = GetStartInfo($"ffmpeg -hide_banner -loglevel warning -i \"{inputFile}\" -f {inputFileType} - | sox -V2 -V2 -t {inputFileType} - -t raw -e signed-integer -b 16 -r 22050 - remix 1", true, true);
 			FileStream fs = null;
 			if (outputFile != null) {
 				File.WriteAllText(outputFile, string.Empty);
@@ -115,7 +115,9 @@ namespace EAS_Decoder {
 				soxProcess.EnableRaisingEvents = true;
 				soxProcess.BeginErrorReadLine();
 				soxProcess.ErrorDataReceived += new DataReceivedEventHandler((s, e) => {
-					// needed to flush standard error so that it does not make the process to hang
+					if (!string.IsNullOrWhiteSpace(e.Data)) {
+						Console.WriteLine($"proc: {e.Data}\n");	// arguments have been modified in ffmpeg so that it only prints to standard error when warnings are raised or errors occur
+					}
 				});
 
 				FileStream baseStream = (FileStream) soxProcess.StandardOutput.BaseStream;
