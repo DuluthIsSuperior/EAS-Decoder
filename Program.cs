@@ -165,6 +165,10 @@ namespace EAS_Decoder {
 				} else if (args[i] == "-t" || args[i] == "--type") {
 					i++;
 					inputFileType = args[i];
+					if (inputFileType == "aac") {
+						Console.WriteLine("attn: ffmpeg refuses to output to aac; treating as mp3");
+						inputFileType = "mp3";
+					}
 				} else if (args[i] == "-r" || args[i] == "--record") {
 					if (inputFileType == "raw") {
 						Console.WriteLine("Recording on alert is not supported when the input file is raw");

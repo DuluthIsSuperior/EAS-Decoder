@@ -2,7 +2,7 @@
   "profiles": {
     "EAS Decoder": {
       "commandName": "Project",
-      "commandLineArgs": "-i workson\\long.wav -t wav"
+      "commandLineArgs": "-i http://18133.live.streamtheworld.com/WCFXFMAAC.aac? -t aac -o test"
     }
   }
 }
