@@ -111,7 +111,9 @@ namespace EAS_Decoder {
 
 			ulong bytesReadIn = 0;
 			using (Process soxProcess = Process.Start(startInfo)) {
-				Console.WriteLine("info: ffmpeg and sox have started");
+				if (!Program.SuppressInfo) {
+					Console.WriteLine("info: ffmpeg and sox have started");
+				}
 				soxProcess.EnableRaisingEvents = true;
 				soxProcess.BeginErrorReadLine();
 				soxProcess.ErrorDataReceived += new DataReceivedEventHandler((s, e) => {

@@ -2,7 +2,7 @@
   "profiles": {
     "EAS Decoder": {
       "commandName": "Project",
-      "commandLineArgs": "-i http://18133.live.streamtheworld.com/WCFXFMAAC.aac? -t aac -o test"
+      "commandLineArgs": "-i https://14643.live.streamtheworld.com/KFXXAMAAC.aac? -t mp3 --suppress"
     }
   }
 }

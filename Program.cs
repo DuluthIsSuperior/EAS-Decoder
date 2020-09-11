@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -11,6 +12,10 @@ namespace EAS_Decoder {
 			private set;
 		}
 		public static JObject CountyCodes {
+			get;
+			private set;
+		}
+		public static bool SuppressInfo {
 			get;
 			private set;
 		}
@@ -26,6 +31,7 @@ namespace EAS_Decoder {
 						"    -u or --update: Attempts to update the local copy of county and event/alert codes\n" +
 						"                    Does not work if the input file is already raw\n" +
 						"    -u or --update: Attempts to update the local copy of county and event/alert codes\n" +
+						"    --suppress: Suppress information output except for total bytes counter\n" +
 						"    -h or --help: Displays this help page\n\n" +
 						"For more information on flags bulleted with an asterisk, type in the flag followed by -h or --help\n" +
 						"e.g. More information about -s can be displayed by typing \"EASDecoder -s -h\"");
@@ -61,7 +67,8 @@ namespace EAS_Decoder {
 					}
 					return false;
 				}
-			} catch {
+			} catch (Exception e) {
+				Debug.WriteLine(e);
 				return false;
 			}
 		}
@@ -158,7 +165,9 @@ namespace EAS_Decoder {
 						}
 						Livestream = true;
 						inputFileDirectory = args[i];
-						Console.WriteLine($"info: Successfully pinged {inputFileDirectory}");
+						if (!SuppressInfo) {
+							Console.WriteLine($"info: Successfully pinged {inputFileDirectory}");
+						}
 					}
 				} else if (args[i] == "-u" || args[i] == "--update") {
 					GetSAMECodesFromInternet();
@@ -205,6 +214,8 @@ namespace EAS_Decoder {
 					outputFileDirectory = outputPath;
 				} else if (args[i] == "-u" || args[i] == "--update") {
 					GetSAMECodesFromInternet();
+				} else if (args[i] == "--suppress") {
+					SuppressInfo = true;
 				} else if (args[i] == "-h" || args[i] == "--help") {
 					DisplayHelp();
 					Environment.Exit(0);
@@ -222,7 +233,9 @@ namespace EAS_Decoder {
 			}
 			if (inputFileDirectory != null) {
 				if (inputFileType != "raw") {
-					Console.WriteLine($"info: Monitoring {inputFileDirectory}");
+					if (!SuppressInfo) {
+						Console.WriteLine($"info: Monitoring {inputFileDirectory}");
+					}
 					int soxExitCode = ProcessManager.GetFileInformation(inputFileDirectory, recordOnEAS);
 					DidSoxFail(soxExitCode);
 
