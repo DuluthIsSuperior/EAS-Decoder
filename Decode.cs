@@ -41,10 +41,42 @@ namespace EAS_Decoder {
 			national = false;
 			string subCode = eventCode.Substring(0, 2);
 			if (eventCode[2] == 'A') {  // watch
-				if (subCode == "AV") { return "Avalanche Watch"; } else if (subCode == "CF") { return "Coastal Flood Watch"; } else if (subCode == "FF") { return "Flash Flood Watch"; } else if (subCode == "FL") { return "Flood Watch"; } else if (subCode == "HU") { return "Hurricane Watch"; } else if (subCode == "HW") { return "High Wind Watch"; } else if (subCode == "SV") { return "Severe Thunderstorm Watch"; } else if (subCode == "TO") { return "Tornado Watch"; } else if (subCode == "TR") { return "Tropical Storm Watch"; } else if (subCode == "TS") { return "Tsunami Watch"; } else if (subCode == "WS") { return "Winter Storm Watch"; }
+				if (subCode == "AV") { return "Avalanche Watch"; }
+				if (subCode == "CF") { return "Coastal Flood Watch"; }
+				if (subCode == "FF") { return "Flash Flood Watch"; }
+				if (subCode == "FL") { return "Flood Watch"; }
+				if (subCode == "HU") { return "Hurricane Watch"; }
+				if (subCode == "HW") { return "High Wind Watch"; }
+				if (subCode == "SQ") { return "Snow Squall Watch"; }
+				if (subCode == "SV") { return "Severe Thunderstorm Watch"; }
+				if (subCode == "TO") { return "Tornado Watch"; }
+				if (subCode == "TR") { return "Tropical Storm Watch"; }
+				if (subCode == "TS") { return "Tsunami Watch"; }
+				if (subCode == "WS") { return "Winter Storm Watch"; }
 				return $"Unrecognized Watch ({eventCode})";
 			} else if (eventCode[2] == 'W') {
-				if (subCode == "AV") { return "Avalanche Warning"; } else if (subCode == "BZ") { return "Blizzard Warning"; } else if (subCode == "CD") { urgent = true; return "Civil Danger Warning"; } else if (subCode == "CF") { return "Coastal Flood Warning"; } else if (subCode == "DS") { return "Dust Storm Warning"; } else if (subCode == "EQ") { return "Earthquake Warning"; } else if (subCode == "FF") { return "Flash Flood Warning"; } else if (subCode == "FL") { return "Flood Warning"; } else if (subCode == "FR") { return "Fire Warning"; } else if (subCode == "HM") { urgent = true; return "Hazardous Materials Warning"; } else if (subCode == "HU") { return "Hurricane Warning"; } else if (subCode == "HW") { return "High Wind Warning"; } else if (subCode == "LE") { urgent = true; return "Law Enforcement Warning"; } else if (subCode == "NU") { urgent = true; return "Nuclear Power Plant Warning"; } else if (subCode == "RH") { urgent = true; return "Radiological Hazard Warning"; } else if (subCode == "SM") { return "Special Marine Warning"; } else if (subCode == "SP") { urgent = true; return "Shelter In-Place Warning"; } else if (subCode == "TR") { return "Tropical Storm Warning"; } else if (subCode == "TS") { return "Tsunami Warning"; } else if (subCode == "VO") { return "Volcano Warning"; } else if (subCode == "WS") { return "Winter Storm Warning"; }
+				if (subCode == "AV") { return "Avalanche Warning"; }
+				if (subCode == "BZ") { return "Blizzard Warning"; }
+				if (subCode == "CD") { urgent = true; return "Civil Danger Warning"; }
+				if (subCode == "CF") { return "Coastal Flood Warning"; }
+				if (subCode == "DS") { return "Dust Storm Warning"; }
+				if (subCode == "EQ") { return "Earthquake Warning"; }
+				if (subCode == "FF") { return "Flash Flood Warning"; }
+				if (subCode == "FL") { return "Flood Warning"; }
+				if (subCode == "FR") { return "Fire Warning"; }
+				if (subCode == "HM") { urgent = true; return "Hazardous Materials Warning"; }
+				if (subCode == "HU") { return "Hurricane Warning"; }
+				if (subCode == "HW") { return "High Wind Warning"; }
+				if (subCode == "LE") { urgent = true; return "Law Enforcement Warning"; }
+				if (subCode == "NU") { urgent = true; return "Nuclear Power Plant Warning"; }
+				if (subCode == "RH") { urgent = true; return "Radiological Hazard Warning"; }
+				if (subCode == "SM") { return "Special Marine Warning"; }
+				if (subCode == "SP") { urgent = true; return "Shelter In-Place Warning"; }
+				if (subCode == "SQ") { return "Snow Squall Warning"; }
+				if (subCode == "TR") { return "Tropical Storm Warning"; }
+				if (subCode == "TS") { return "Tsunami Warning"; }
+				if (subCode == "VO") { return "Volcano Warning"; }
+				if (subCode == "WS") { return "Winter Storm Warning"; }
 				return $"Unrecognized Warning ({eventCode})";
 			} else if (eventCode[2] == 'S') {
 				if (subCode == "FF") { return "Flash Flood Statement"; } else if (subCode == "FL") { return "Flood Statement"; } else if (subCode == "HL") { return "Hurricane Statement"; } else if (subCode == "SP") { return "Special Weather Statement"; } else if (subCode == "SV") { return "Severe Weather Statement"; }
@@ -52,7 +84,21 @@ namespace EAS_Decoder {
 			} else if (eventCode[2] == 'E') {
 				if (subCode == "CA") { return "Child Abduction Emergency"; } else if (subCode == "LA") { return "Local Area Emergency"; } else if (subCode == "TO") { return "911 Telephone Outage Emergency"; }
 				return $"Unrecognized Emergency ({eventCode})";
-			} else if (eventCode == "SVR") { return "Severe Thunderstorm Warning"; } else if (eventCode == "TOR") { return "Tornado Warning"; } else if (eventCode == "ADR") { return "Administrative Message"; } else if (eventCode == "CEM") { return "Civil Emergency Message"; } else if (eventCode == "DMO") { return "Practice/Demo"; } else if (eventCode == "EAN") { national = true; return "Emergency Action Notification"; } else if (eventCode == "EAT") { national = true; return "Emergency Action Termination"; } else if (eventCode == "EVI") { urgent = true; return "Evacuation Immediate"; } else if (eventCode == "NIC") { return "National Information Center"; } else if (eventCode == "NMN") { return "Network Message Notification"; } else if (eventCode == "NPT") { return "National Periodic Test"; } else if (eventCode == "RMT") { return "Required Monthly Test"; } else if (eventCode == "RWT") { return "Required Weekly Test"; }
+			}
+			if (eventCode == "SVR") { return "Severe Thunderstorm Warning"; }
+			if (eventCode == "TOR") { return "Tornado Warning"; }
+			if (eventCode == "ADR") { return "Administrative Message"; }
+			if (eventCode == "BLU") { return "Blue Alert"; }
+			if (eventCode == "CEM") { return "Civil Emergency Message"; }
+			if (eventCode == "DMO") { return "Practice/Demo"; }
+			if (eventCode == "EAN") { national = true; return "Emergency Action Notification"; }
+			if (eventCode == "EAT") { national = true; return "Emergency Action Termination"; }
+			if (eventCode == "EVI") { urgent = true; return "Evacuation Immediate"; }
+			if (eventCode == "NIC") { return "National Information Center"; }
+			if (eventCode == "NMN") { return "Network Message Notification"; }
+			if (eventCode == "NPT") { return "National Periodic Test"; }
+			if (eventCode == "RMT") { return "Required Monthly Test"; }
+			if (eventCode == "RWT") { return "Required Weekly Test"; }
 			return $"Unrecognized Alert ({eventCode})";
 		}
 
