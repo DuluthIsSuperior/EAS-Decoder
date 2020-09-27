@@ -90,34 +90,27 @@ namespace EAS_Decoder {
 			{ "RWT", "Required Weekly Test" }
 		};
 
+		private static string HasEventCode(string subCode, string type, char postfix, params Dictionary<string, string>[] dictionaries) {
+			foreach (Dictionary<string, string> dict in dictionaries) {
+				if (dict.ContainsKey(subCode)) {
+					return $"{dict[subCode]} {type}";
+				}
+			}
+			return $"Unrecognized {type} ({subCode}{postfix})";
+		}
+
 		static string GetEventName(string eventCode, out bool urgent, out bool national) {
 			urgent = false;
 			national = false;
 			string subCode = eventCode.Substring(0, 2);
 			if (eventCode[2] == 'A') {  // watch
-				if (commonEventCodes.ContainsKey(subCode)) {
-					return $"{commonEventCodes[subCode]} Watch";
-				}
-				return $"Unrecognized Watch ({eventCode})";
+				return HasEventCode(subCode, "Watch", 'A', commonEventCodes);
 			} else if (eventCode[2] == 'W') {
-				if (commonEventCodes.ContainsKey(subCode)) {
-					return $"{commonEventCodes[subCode]} Warning";
-				} else if (warningEventCodes.ContainsKey(subCode)) {
-					return $"{warningEventCodes[subCode]} Warning";
-				}
-				return $"Unrecognized Warning ({eventCode})";
+				return HasEventCode(subCode, "Warning", 'W', commonEventCodes, warningEventCodes);
 			} else if (eventCode[2] == 'S') {
-				if (commonEventCodes.ContainsKey(subCode)) {
-					return $"{commonEventCodes[subCode]} Statement";
-				} else if (statementEventCodes.ContainsKey(subCode)) {
-					return $"{statementEventCodes[subCode]} Statement";
-				}
-				return $"Unrecognized Statement ({eventCode})";
+				return HasEventCode(subCode, "Statement", 'S', commonEventCodes, statementEventCodes);
 			} else if (eventCode[2] == 'E') {
-				if (emergencyEventCodes.ContainsKey(subCode)) {
-					return $"{emergencyEventCodes[subCode]} Emergency";
-				}
-				return $"Unrecognized Emergency ({eventCode})";
+				return HasEventCode(subCode, "Emergency", 'E', emergencyEventCodes);
 			}
 			if (otherEventCodes.ContainsKey(eventCode)) {
 				return otherEventCodes[eventCode];
