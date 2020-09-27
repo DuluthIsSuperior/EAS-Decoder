@@ -35,70 +35,93 @@ namespace EAS_Decoder {
 
 		public static int bytesReadIn = 0;
 		static bool record = false;
+		static Dictionary<string, string> commonEventCodes = new Dictionary<string, string> {
+			{ "AV", "Avalanche" },
+			{ "CF", "Coastal Flood" },
+			{ "FF", "Flash Flood" },
+			{ "FL", "Flood" },
+			{ "HU", "Hurricane" },
+			{ "HW", "High Wind" },
+			{ "SQ", "Snow Squall" },
+			{ "SV", "Severe Thunderstorm" },
+			{ "TO", "Tornado" },
+			{ "TR", "Tropical Storm" },
+			{ "TS", "Tsunami" },
+			{ "WS", "Winter Storm" }
+		};
+		static Dictionary<string, string> warningEventCodes = new Dictionary<string, string> {
+			{ "BZ", "Blizzard" }, 
+			{ "CD", "Civil Danger" }, 
+			{ "CF", "Coastal Flood" }, 
+			{ "DS", "Dust Storm" }, 
+			{ "EQ", "Earthquake" }, 
+			{ "FR", "Fire" }, 
+			{ "HM", "Hazardous Materials" }, 
+			{ "LE", "Law Enforcement" }, 
+			{ "NU", "Nuclear Power Plant" }, 
+			{ "RH", "Radiological Hazard" }, 
+			{ "SM", "Special Marine" }, 
+			{ "SP", "Shelter In-Place" }, 
+			{ "VO", "Volcano" }
+		};
+		static Dictionary<string, string> statementEventCodes = new Dictionary<string, string> {
+			{ "SP", "Special Weather" },
+			{ "SV", "Severe Weather" }
+		};
+		static Dictionary<string, string> emergencyEventCodes = new Dictionary<string, string> {
+			{ "CA", "Child Abduction" },
+			{ "LA", "Local Area" },
+			{ "TO", "911 Telephone Outage" }
+		};
+		static Dictionary<string, string> otherEventCodes = new Dictionary<string, string> {
+			{ "SVR", "Severe Thunderstorm Warning" },
+			{ "TOR", "Tornado Warning" },
+			{ "ADR", "Administrative Message" },
+			{ "BLU", "Blue Alert" },
+			{ "CEM", "Civil Emergency Message" },
+			{ "DMO", "Practice/Demo" },
+			{ "EAN", "Emergency Action Notification" },
+			{ "EAT", "Emergency Action Termination" },
+			{ "EVI", "Evacuation Immediate" },
+			{ "NIC", "National Information Center" },
+			{ "NMN", "Network Message Notification" },
+			{ "NPT", "National Periodic Test" },
+			{ "RMT", "Required Monthly Test" },
+			{ "RWT", "Required Weekly Test" }
+		};
 
 		static string GetEventName(string eventCode, out bool urgent, out bool national) {
 			urgent = false;
 			national = false;
 			string subCode = eventCode.Substring(0, 2);
 			if (eventCode[2] == 'A') {  // watch
-				if (subCode == "AV") { return "Avalanche Watch"; }
-				if (subCode == "CF") { return "Coastal Flood Watch"; }
-				if (subCode == "FF") { return "Flash Flood Watch"; }
-				if (subCode == "FL") { return "Flood Watch"; }
-				if (subCode == "HU") { return "Hurricane Watch"; }
-				if (subCode == "HW") { return "High Wind Watch"; }
-				if (subCode == "SQ") { return "Snow Squall Watch"; }
-				if (subCode == "SV") { return "Severe Thunderstorm Watch"; }
-				if (subCode == "TO") { return "Tornado Watch"; }
-				if (subCode == "TR") { return "Tropical Storm Watch"; }
-				if (subCode == "TS") { return "Tsunami Watch"; }
-				if (subCode == "WS") { return "Winter Storm Watch"; }
+				if (commonEventCodes.ContainsKey(subCode)) {
+					return $"{commonEventCodes[subCode]} Watch";
+				}
 				return $"Unrecognized Watch ({eventCode})";
 			} else if (eventCode[2] == 'W') {
-				if (subCode == "AV") { return "Avalanche Warning"; }
-				if (subCode == "BZ") { return "Blizzard Warning"; }
-				if (subCode == "CD") { urgent = true; return "Civil Danger Warning"; }
-				if (subCode == "CF") { return "Coastal Flood Warning"; }
-				if (subCode == "DS") { return "Dust Storm Warning"; }
-				if (subCode == "EQ") { return "Earthquake Warning"; }
-				if (subCode == "FF") { return "Flash Flood Warning"; }
-				if (subCode == "FL") { return "Flood Warning"; }
-				if (subCode == "FR") { return "Fire Warning"; }
-				if (subCode == "HM") { urgent = true; return "Hazardous Materials Warning"; }
-				if (subCode == "HU") { return "Hurricane Warning"; }
-				if (subCode == "HW") { return "High Wind Warning"; }
-				if (subCode == "LE") { urgent = true; return "Law Enforcement Warning"; }
-				if (subCode == "NU") { urgent = true; return "Nuclear Power Plant Warning"; }
-				if (subCode == "RH") { urgent = true; return "Radiological Hazard Warning"; }
-				if (subCode == "SM") { return "Special Marine Warning"; }
-				if (subCode == "SP") { urgent = true; return "Shelter In-Place Warning"; }
-				if (subCode == "SQ") { return "Snow Squall Warning"; }
-				if (subCode == "TR") { return "Tropical Storm Warning"; }
-				if (subCode == "TS") { return "Tsunami Warning"; }
-				if (subCode == "VO") { return "Volcano Warning"; }
-				if (subCode == "WS") { return "Winter Storm Warning"; }
+				if (commonEventCodes.ContainsKey(subCode)) {
+					return $"{commonEventCodes[subCode]} Warning";
+				} else if (warningEventCodes.ContainsKey(subCode)) {
+					return $"{warningEventCodes[subCode]} Warning";
+				}
 				return $"Unrecognized Warning ({eventCode})";
 			} else if (eventCode[2] == 'S') {
-				if (subCode == "FF") { return "Flash Flood Statement"; } else if (subCode == "FL") { return "Flood Statement"; } else if (subCode == "HL") { return "Hurricane Statement"; } else if (subCode == "SP") { return "Special Weather Statement"; } else if (subCode == "SV") { return "Severe Weather Statement"; }
+				if (commonEventCodes.ContainsKey(subCode)) {
+					return $"{commonEventCodes[subCode]} Statement";
+				} else if (statementEventCodes.ContainsKey(subCode)) {
+					return $"{statementEventCodes[subCode]} Statement";
+				}
 				return $"Unrecognized Statement ({eventCode})";
 			} else if (eventCode[2] == 'E') {
-				if (subCode == "CA") { return "Child Abduction Emergency"; } else if (subCode == "LA") { return "Local Area Emergency"; } else if (subCode == "TO") { return "911 Telephone Outage Emergency"; }
+				if (emergencyEventCodes.ContainsKey(subCode)) {
+					return $"{emergencyEventCodes[subCode]} Emergency";
+				}
 				return $"Unrecognized Emergency ({eventCode})";
 			}
-			if (eventCode == "SVR") { return "Severe Thunderstorm Warning"; }
-			if (eventCode == "TOR") { return "Tornado Warning"; }
-			if (eventCode == "ADR") { return "Administrative Message"; }
-			if (eventCode == "BLU") { return "Blue Alert"; }
-			if (eventCode == "CEM") { return "Civil Emergency Message"; }
-			if (eventCode == "DMO") { return "Practice/Demo"; }
-			if (eventCode == "EAN") { national = true; return "Emergency Action Notification"; }
-			if (eventCode == "EAT") { national = true; return "Emergency Action Termination"; }
-			if (eventCode == "EVI") { urgent = true; return "Evacuation Immediate"; }
-			if (eventCode == "NIC") { return "National Information Center"; }
-			if (eventCode == "NMN") { return "Network Message Notification"; }
-			if (eventCode == "NPT") { return "National Periodic Test"; }
-			if (eventCode == "RMT") { return "Required Monthly Test"; }
-			if (eventCode == "RWT") { return "Required Weekly Test"; }
+			if (otherEventCodes.ContainsKey(eventCode)) {
+				return otherEventCodes[eventCode];
+			}
 			return $"Unrecognized Alert ({eventCode})";
 		}
 
