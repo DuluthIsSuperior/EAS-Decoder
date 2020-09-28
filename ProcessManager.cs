@@ -210,7 +210,7 @@ namespace EAS_Decoder {
 			return 0;
 		}
 
-		public static int GetFileInformation(string filepath, bool record) {
+		public static int GetFileInformation(string filepath, bool record, uint duration) {
 			fileCreated = DateTime.Now;
 			ProcessStartInfo startInfo = GetStartInfo($"sox --i \"{filepath}", true, true);
 
@@ -252,7 +252,7 @@ namespace EAS_Decoder {
 			}
 
 			if (record) {
-				bufferBefore = new FixedSizeQueue<byte>(bitrate * 5);
+				bufferBefore = new FixedSizeQueue<byte>(bitrate * duration);
 			}
 			return 0;
 		}

@@ -28,8 +28,9 @@ namespace EAS_Decoder {
 						"    -t or --type [TYPE]: The type of the input file (assumed to be .raw if not specified)\n" +
 						"    -o or --output [FILEPATH]: Output file to convert input file to raw using sox\n" +
 						"    -r or --record: Saves recordings of EAS alerts that this program reads in using parameters from the input file\n" +
-						"    -u or --update: Attempts to update the local copy of county and event/alert codes\n" +
 						"                    Does not work if the input file is already raw\n" +
+						"    -d or --duration [DURATION]: Specifies how much audio should be stored before and after recording an alert\n" +
+						"                                 Estimated only; attempting to make more accurate; default is 5 if not specified\n" +
 						"    -u or --update: Attempts to update the local copy of county and event/alert codes\n" +
 						"    --suppress: Suppress information output except for total bytes counter\n" +
 						"    -h or --help: Displays this help page\n\n" +
@@ -122,6 +123,7 @@ namespace EAS_Decoder {
 			string inputFileType = "raw";
 			string outputFileDirectory = null;
 			bool recordOnEAS = false;
+			uint duration = 5;
 
 			for (int i = 0; i < args.Length; i++) {
 				if (args[i] == "-s" || args[i] == "--sox") {
@@ -184,6 +186,11 @@ namespace EAS_Decoder {
 					} else {
 						recordOnEAS = true;
 					}
+				} else if (args[i] == "-d" || args[i] == "--duration") {
+					i++;
+					if (!uint.TryParse(args[i], out duration)) {
+						Console.WriteLine("err: Could not understand input for duration. Please make sure a positive integer/whole number was typed in.");
+					}
 				} else if (args[i] == "-o" || args[i] == "--output" || args[i] == "--output-file") {
 					i++;
 					if (File.Exists(args[i])) {
@@ -236,7 +243,7 @@ namespace EAS_Decoder {
 					if (!SuppressInfo) {
 						Console.WriteLine($"info: Monitoring {inputFileDirectory}");
 					}
-					int soxExitCode = ProcessManager.GetFileInformation(inputFileDirectory, recordOnEAS);
+					int soxExitCode = ProcessManager.GetFileInformation(inputFileDirectory, recordOnEAS, duration);
 					DidSoxFail(soxExitCode);
 
 					soxExitCode = ProcessManager.ConvertAndDecode(inputFileDirectory, inputFileType, outputFileDirectory);
