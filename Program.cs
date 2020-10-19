@@ -33,6 +33,7 @@ namespace EAS_Decoder {
 						"                                 Estimated only; attempting to make more accurate; default is 5 if not specified\n" +
 						"    -u or --update: Attempts to update the local copy of county and event/alert codes\n" +
 						"    --suppress: Suppress information output except for total bytes counter\n" +
+						"    -c or --convert [FILEPATH]: Converts a raw file produced by this program to an mp3\n" +
 						"    -h or --help: Displays this help page\n\n" +
 						"For more information on flags bulleted with an asterisk, type in the flag followed by -h or --help\n" +
 						"e.g. More information about -s can be displayed by typing \"EASDecoder -s -h\"");
@@ -223,6 +224,12 @@ namespace EAS_Decoder {
 					GetSAMECodesFromInternet();
 				} else if (args[i] == "--suppress") {
 					SuppressInfo = true;
+				} else if (args[i] == "-c" || args[i] == "--convert") {
+					i++;
+					if (File.Exists(args[i])) {
+						ProcessManager.ConvertRAWToMP3(args[i], $"{args[i]}.mp3");
+					}
+					return;
 				} else if (args[i] == "-h" || args[i] == "--help") {
 					DisplayHelp();
 					Environment.Exit(0);

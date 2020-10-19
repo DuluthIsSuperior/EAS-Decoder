@@ -61,9 +61,8 @@ namespace EAS_Decoder {
 			};
 		}
 
-		static void ConvertRAWToMP3(string filename) {
-			Console.WriteLine($"Alert saved to {filename}.mp3\n");
-			ProcessStartInfo startInfo = GetStartInfo($"sox -r 22050 -e signed -b 16 -t raw \"{filename}.raw\" -t mp3 \"{filename}.mp3\"", false, true);
+		public static void ConvertRAWToMP3(string src, string dest) {
+			ProcessStartInfo startInfo = GetStartInfo($"sox -r 22050 -e signed -b 16 -t raw \"{src}\" -t mp3 \"{dest}\"", false, true);
 			using (Process soxProcess = Process.Start(startInfo)) {
 				string line = soxProcess.StandardError.ReadLine();
 				while (line != null) {
@@ -71,6 +70,10 @@ namespace EAS_Decoder {
 				}
 				soxProcess.WaitForExit();
 			}
+		}
+
+		static void ConvertRAWToMP3(string filename) {
+			ConvertRAWToMP3($"{filename}.raw", $"{filename}.mp3");
 		}
 
 		static string AddLeadingZero(int value) {
@@ -89,6 +92,7 @@ namespace EAS_Decoder {
 			easRecord = null;
 
 			ConvertRAWToMP3(fileName);
+			Console.WriteLine($"Alert saved to {fileName}.mp3\n");
 			File.Delete($"{fileName}.raw");
 		}
 
