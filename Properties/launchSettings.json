@@ -2,7 +2,7 @@
   "profiles": {
     "EAS Decoder": {
       "commandName": "Project",
-      "commandLineArgs": "-c test.mp3.raw"
+      "commandLineArgs": "--suppress -i http://ice42.securenetsystems.net/WGUO -t mp3 -r -m \"test of the system\""
     }
   }
 }

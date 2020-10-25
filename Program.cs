@@ -34,6 +34,7 @@ namespace EAS_Decoder {
 						"    -u or --update: Attempts to update the local copy of county and event/alert codes\n" +
 						"    --suppress: Suppress information output except for total bytes counter\n" +
 						"    -c or --convert [FILEPATH]: Converts a raw file produced by this program to an mp3\n" +
+						"    -m or --message [MESSAGE]: Message to display before running the program (surround in double quotes)\n" +
 						"    -h or --help: Displays this help page\n\n" +
 						"For more information on flags bulleted with an asterisk, type in the flag followed by -h or --help\n" +
 						"e.g. More information about -s can be displayed by typing \"EASDecoder -s -h\"");
@@ -230,6 +231,8 @@ namespace EAS_Decoder {
 						ProcessManager.ConvertRAWToMP3(args[i], $"{args[i]}.mp3");
 					}
 					return;
+				} else if (args[i] == "-m" || args[i] == "--message") {
+					Console.WriteLine(args[++i]);	// shell will treat the string surrounded by " as one whole string
 				} else if (args[i] == "-h" || args[i] == "--help") {
 					DisplayHelp();
 					Environment.Exit(0);
