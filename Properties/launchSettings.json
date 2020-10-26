@@ -2,7 +2,7 @@
   "profiles": {
     "EAS Decoder": {
       "commandName": "Project",
-      "commandLineArgs": "--suppress -i http://ice42.securenetsystems.net/WGUO -t mp3 -r -m \"test of the system\""
+      "commandLineArgs": "-m \"LIX WGCM Coast of Mississippi\" --suppress -i https://ice23.securenetsystems.net/WGCMAM? -t mp3"
     }
   }
 }
